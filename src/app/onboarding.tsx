@@ -1,5 +1,5 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import { useRef, useState } from "react";
 import {
@@ -34,21 +34,24 @@ const slides: SlideItem[] = [
     id: "slide-1",
     eyebrow: "USED CAR MARKETPLACE",
     title: "Discover & buy verified used cars",
-    description: "Browse inspected cars with full transparency, clear pricing, and verified inspection status across the UK.",
+    description:
+      "Browse inspected cars with full transparency, clear pricing, and verified inspection status across the UK.",
     icon: "car-sport-outline",
   },
   {
     id: "slide-2",
     eyebrow: "MOBILE CAR CARE",
     title: "Car care that comes to your door",
-    description: "Book qualified mobile workers for servicing, maintenance, and vehicle checks at your location.",
+    description:
+      "Book qualified mobile workers for servicing, maintenance, and vehicle checks at your location.",
     icon: "build-outline",
   },
   {
     id: "slide-3",
     eyebrow: "PHYSICAL VERIFICATION",
     title: "In-person vehicle inspections",
-    description: "Get detailed physical inspection reports with photo evidence before buying or selling a car.",
+    description:
+      "Get detailed physical inspection reports with photo evidence before buying or selling a car.",
     icon: "shield-checkmark-outline",
   },
 ];
@@ -93,8 +96,9 @@ export default function OnboardingScreen() {
         <View style={styles.brand}>
           <FengxingWheel size={38} duration={12000} />
           <View style={styles.wordmark}>
-            <Text style={[styles.brandFeng, { color: theme.text }]}>feng</Text>
-            <Text style={[styles.brandXing, { color: theme.primary }]}>xing</Text>
+            <Text style={[styles.brandXing, { color: theme.primary }]}>
+              Shaz
+            </Text>
           </View>
         </View>
 
@@ -102,9 +106,14 @@ export default function OnboardingScreen() {
           accessibilityRole="button"
           onPress={() => void finishOnboarding()}
           hitSlop={10}
-          style={({ pressed }) => [styles.skipButton, pressed && styles.pressed]}
+          style={({ pressed }) => [
+            styles.skipButton,
+            pressed && styles.pressed,
+          ]}
         >
-          <Text style={[styles.skipText, { color: theme.textSecondary }]}>Skip</Text>
+          <Text style={[styles.skipText, { color: theme.textSecondary }]}>
+            Skip
+          </Text>
         </Pressable>
       </View>
 
@@ -119,11 +128,16 @@ export default function OnboardingScreen() {
         onScroll={onScroll}
         scrollEventThrottle={16}
         renderItem={({ item }) => (
-          <View style={[styles.slideCard, { width: SCREEN_WIDTH - spacing.xl * 2 }]}>
+          <View
+            style={[styles.slideCard, { width: SCREEN_WIDTH - spacing.xl * 2 }]}
+          >
             <View
               style={[
                 styles.iconCircle,
-                { backgroundColor: theme.primarySoft, borderColor: theme.border },
+                {
+                  backgroundColor: theme.primarySoft,
+                  borderColor: theme.border,
+                },
               ]}
             >
               <Ionicons name={item.icon} size={48} color={theme.primary} />
@@ -136,7 +150,9 @@ export default function OnboardingScreen() {
               <Text style={[styles.title, { color: theme.text }]}>
                 {item.title}
               </Text>
-              <Text style={[styles.description, { color: theme.textSecondary }]}>
+              <Text
+                style={[styles.description, { color: theme.textSecondary }]}
+              >
                 {item.description}
               </Text>
             </View>
@@ -153,7 +169,8 @@ export default function OnboardingScreen() {
               style={[
                 styles.dot,
                 {
-                  backgroundColor: i === activeIndex ? theme.primary : theme.border,
+                  backgroundColor:
+                    i === activeIndex ? theme.primary : theme.border,
                   width: i === activeIndex ? 24 : 8,
                 },
               ]}

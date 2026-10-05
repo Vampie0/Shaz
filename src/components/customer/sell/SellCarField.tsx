@@ -1,25 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
-import type {
-  ComponentProps,
-  Ref,
-} from "react";
-import {
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
-import type {
-  KeyboardTypeOptions,
-} from "react-native";
+import type { ComponentProps, Ref } from "react";
+import type { KeyboardTypeOptions } from "react-native";
+import { View } from "react-native";
 
-import {
-  fontSize,
-  fontWeight,
-  radius,
-  spacing,
-} from "@/constants/theme";
-import { useAppTheme } from "@/hooks/use-app-theme";
+import AppInput from "@/components/ui/AppInput";
 
 type IconName = ComponentProps<typeof Ionicons>["name"];
 
@@ -30,6 +14,7 @@ type SellCarFieldProps = {
   placeholder: string;
 
   required?: boolean;
+  editable?: boolean;
   icon?: IconName;
   keyboardType?: KeyboardTypeOptions;
   autoCapitalize?: "none" | "sentences" | "words" | "characters";
@@ -48,115 +33,35 @@ export default function SellCarField({
   onChangeText,
   placeholder,
   required = false,
-  icon,
+  editable = true,
   keyboardType,
   autoCapitalize = "sentences",
   multiline = false,
   maxLength,
   fieldRef,
-  invalid = false,
   onFocus,
   onBlur,
 }: SellCarFieldProps) {
-  const theme = useAppTheme();
+  const displayLabel = `${label}${required && editable ? " *" : ""}${
+    !editable ? " (Locked)" : ""
+  }`;
 
   return (
-    <View
-      ref={fieldRef}
-      collapsable={false}
-      style={styles.field}
-    >
-      <Text
-        style={[
-          styles.label,
-          {
-            color: invalid ? theme.danger : theme.textSecondary,
-          },
-        ]}
-      >
-        {label}
-        {required ? (
-          <Text style={{ color: theme.primary }}> *</Text>
-        ) : null}
-      </Text>
-
-      <View
-        style={[
-          styles.control,
-          multiline && styles.multilineControl,
-          {
-            borderColor: invalid ? theme.danger : theme.border,
-            borderWidth: invalid ? 2 : 1,
-            backgroundColor: invalid ? theme.dangerSoft : theme.surface,
-          },
-        ]}
-      >
-        {icon ? (
-          <Ionicons
-            name={icon}
-            size={19}
-            color={invalid ? theme.danger : theme.textMuted}
-            style={multiline ? styles.multilineIcon : undefined}
-          />
-        ) : null}
-
-        <TextInput
-          value={value}
-          onChangeText={onChangeText}
-          placeholder={placeholder}
-          placeholderTextColor={theme.textMuted}
-          keyboardType={keyboardType}
-          autoCapitalize={autoCapitalize}
-          multiline={multiline}
-          maxLength={maxLength}
-          onFocus={onFocus}
-          onBlur={onBlur}
-          textAlignVertical={multiline ? "top" : "center"}
-          style={[
-            styles.input,
-            multiline && styles.multilineInput,
-            { color: theme.text },
-          ]}
-        />
-      </View>
+    <View ref={fieldRef} collapsable={false}>
+      <AppInput
+        label={displayLabel}
+        value={value}
+        onChangeText={onChangeText}
+        placeholder={placeholder}
+        editable={editable}
+        keyboardType={keyboardType}
+        autoCapitalize={autoCapitalize}
+        multiline={multiline}
+        maxLength={maxLength}
+        onFocus={onFocus}
+        onBlur={onBlur}
+        textAlignVertical={multiline ? "top" : "center"}
+      />
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  field: {
-    gap: 7,
-    borderRadius: radius.lg,
-  },
-  label: {
-    fontSize: fontSize.xs,
-    fontWeight: fontWeight.bold,
-  },
-  control: {
-    minHeight: 54,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-    borderRadius: radius.lg,
-    paddingHorizontal: spacing.md,
-  },
-  multilineControl: {
-    minHeight: 150,
-    alignItems: "flex-start",
-    paddingTop: spacing.sm,
-  },
-  multilineIcon: {
-    marginTop: 12,
-  },
-  input: {
-    flex: 1,
-    minHeight: 50,
-    paddingVertical: 10,
-    fontSize: fontSize.md,
-  },
-  multilineInput: {
-    minHeight: 130,
-    paddingTop: 10,
-    lineHeight: 22,
-  },
-});

@@ -22,7 +22,11 @@ import { supabase } from "@/services/supabase/client";
 
 export default function VerifyEmailScreen() {
   const theme = useAppTheme();
-  const params = useLocalSearchParams<{ email?: string; name?: string; phone?: string }>();
+  const params = useLocalSearchParams<{
+    email?: string;
+    name?: string;
+    phone?: string;
+  }>();
 
   const email = typeof params.email === "string" ? params.email : "";
   const name = typeof params.name === "string" ? params.name : "";
@@ -73,7 +77,7 @@ export default function VerifyEmailScreen() {
         });
       }
 
-      toastSuccess("Email verified! Welcome to Fengxing.", "Account Confirmed");
+      toastSuccess("Email verified! Welcome to Shaz.", "Account Confirmed");
 
       // 3. Redirect to Customer Overview Dashboard
       router.replace("/(customer)/(tabs)/overview");
@@ -102,7 +106,10 @@ export default function VerifyEmailScreen() {
 
       if (error) throw error;
 
-      toastSuccess("A new verification code was sent to your email.", "Code Resent");
+      toastSuccess(
+        "A new verification code was sent to your email.",
+        "Code Resent",
+      );
     } catch (err) {
       console.error("Resend OTP error:", err);
       toastError("Could not resend code. Please try again later.");
@@ -113,7 +120,10 @@ export default function VerifyEmailScreen() {
 
   return (
     <>
-      <KeyboardScreenContainer bottomPadding={200} contentContainerStyle={styles.scrollContent}>
+      <KeyboardScreenContainer
+        bottomPadding={200}
+        contentContainerStyle={styles.scrollContent}
+      >
         <View style={styles.screen}>
           {/* TOP HEADER */}
           <View style={styles.topRow}>
@@ -121,16 +131,22 @@ export default function VerifyEmailScreen() {
               accessibilityRole="button"
               hitSlop={12}
               onPress={router.back}
-              style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}
+              style={({ pressed }) => [
+                styles.backButton,
+                pressed && styles.pressed,
+              ]}
             >
-              <Text style={[styles.backText, { color: theme.primary }]}>Back</Text>
+              <Text style={[styles.backText, { color: theme.primary }]}>
+                Back
+              </Text>
             </Pressable>
 
             <View style={styles.miniBrand}>
               <FengxingWheel size={30} duration={9000} />
               <View style={styles.wordmark}>
-                <Text style={[styles.brandText, { color: theme.text }]}>feng</Text>
-                <Text style={[styles.brandText, { color: theme.primary }]}>xing</Text>
+                <Text style={[styles.brandText, { color: theme.primary }]}>
+                  Shaz
+                </Text>
               </View>
             </View>
           </View>
@@ -147,7 +163,10 @@ export default function VerifyEmailScreen() {
 
             <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
               We sent a verification code to{"\n"}
-              <Text style={{ fontWeight: fontWeight.bold, color: theme.text }}>{email || "your email"}</Text>.
+              <Text style={{ fontWeight: fontWeight.bold, color: theme.text }}>
+                {email || "your email"}
+              </Text>
+              .
             </Text>
           </View>
 
@@ -183,7 +202,9 @@ export default function VerifyEmailScreen() {
 
             {/* RESEND LINK */}
             <View style={styles.resendRow}>
-              <Text style={[styles.resendQuestion, { color: theme.textSecondary }]}>
+              <Text
+                style={[styles.resendQuestion, { color: theme.textSecondary }]}
+              >
                 Didn't receive the code?
               </Text>
 
@@ -192,7 +213,10 @@ export default function VerifyEmailScreen() {
                 disabled={isResending}
                 onPress={() => void handleResendCode()}
                 hitSlop={8}
-                style={({ pressed }) => [styles.resendBtn, pressed && styles.pressed]}
+                style={({ pressed }) => [
+                  styles.resendBtn,
+                  pressed && styles.pressed,
+                ]}
               >
                 {isResending ? (
                   <ActivityIndicator size="small" color={theme.primary} />
@@ -245,11 +269,26 @@ const styles = StyleSheet.create({
   backText: { fontSize: 13, fontWeight: fontWeight.bold },
   miniBrand: { flexDirection: "row", alignItems: "center", gap: 8 },
   wordmark: { flexDirection: "row" },
-  brandText: { fontSize: 21, lineHeight: 24, fontWeight: fontWeight.bold, letterSpacing: -0.8 },
+  brandText: {
+    fontSize: 21,
+    lineHeight: 24,
+    fontWeight: fontWeight.bold,
+    letterSpacing: -0.8,
+  },
 
   intro: { marginBottom: 32 },
-  eyebrow: { marginBottom: 12, fontSize: 11, fontWeight: fontWeight.bold, letterSpacing: 1.4 },
-  title: { fontSize: 36, lineHeight: 40, fontWeight: fontWeight.bold, letterSpacing: -1.1 },
+  eyebrow: {
+    marginBottom: 12,
+    fontSize: 11,
+    fontWeight: fontWeight.bold,
+    letterSpacing: 1.4,
+  },
+  title: {
+    fontSize: 36,
+    lineHeight: 40,
+    fontWeight: fontWeight.bold,
+    letterSpacing: -1.1,
+  },
   subtitle: { marginTop: 12, fontSize: fontSize.md, lineHeight: 23 },
 
   form: { gap: spacing.xl },
@@ -271,7 +310,12 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
   },
 
-  resendRow: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6 },
+  resendRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+  },
   resendQuestion: { fontSize: 13 },
   resendBtn: { minHeight: 30, justifyContent: "center" },
   resendText: { fontSize: 13, fontWeight: fontWeight.bold },

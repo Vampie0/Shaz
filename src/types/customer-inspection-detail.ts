@@ -53,6 +53,7 @@ export type CustomerInspectionReportImage = {
 
 export type CustomerInspectionReport = {
   inspection: CustomerInspectionDetail;
+  evidenceExpiresAt: string | null;
 
   id: string;
   overallResult: string | null;
@@ -70,4 +71,3 @@ export type CustomerInspectionReport = {
   submittedAt: string | null;
   images: CustomerInspectionReportImage[];
 };
-

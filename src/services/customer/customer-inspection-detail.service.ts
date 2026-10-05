@@ -76,6 +76,7 @@ type InspectionReportImageRow = {
   storage_path: string;
   caption: string | null;
   sort_order: number;
+  evidence_expires_at: string | null;
 };
 
 async function signedStorageUrl(
@@ -137,11 +138,13 @@ async function fetchInspectionVehicle(
     .order("sort_order", { ascending: true });
 
   if (imageError) {
-    console.warn("Inspection vehicle image could not be loaded:", imageError.message);
+    console.warn(
+      "Inspection vehicle image could not be loaded:",
+      imageError.message,
+    );
   }
 
   const images = (imageData as unknown as CarImageRow[] | null) ?? [];
-
   const primary = images.find((image) => image.is_primary) ?? images[0];
 
   const imageUrl = primary
@@ -244,7 +247,10 @@ export async function fetchCustomerInspectionReport(
     inspectionId,
   );
 
-  if (inspection.status !== "completed") {
+  if (
+    inspection.status !== "completed" &&
+    inspection.status !== "report_submitted"
+  ) {
     throw new Error("The inspection report is not ready to view yet.");
   }
 
@@ -284,7 +290,7 @@ export async function fetchCustomerInspectionReport(
 
   const { data: imageData, error: imageError } = await supabase
     .from("inspection_report_images")
-    .select("id,storage_path,caption,sort_order")
+    .select("id,storage_path,caption,sort_order,evidence_expires_at")
     .eq("inspection_report_id", report.id)
     .order("sort_order", { ascending: true });
 
@@ -292,14 +298,20 @@ export async function fetchCustomerInspectionReport(
     throw imageError;
   }
 
-  const imageRows = (imageData as unknown as InspectionReportImageRow[] | null) ?? [];
+  const imageRows =
+    (imageData as unknown as InspectionReportImageRow[] | null) ?? [];
 
   const signedImages = await Promise.all(
-    imageRows.map(async (image): Promise<CustomerInspectionReportImage | null> => {
-      const url = await signedStorageUrl("inspection-images", image.storage_path);
-      if (!url) return null;
-      return { id: image.id, url, caption: image.caption };
-    })
+    imageRows.map(
+      async (image): Promise<CustomerInspectionReportImage | null> => {
+        const url = await signedStorageUrl(
+          "inspection-images",
+          image.storage_path,
+        );
+        if (!url) return null;
+        return { id: image.id, url, caption: image.caption };
+      },
+    ),
   );
 
   return {
@@ -315,29 +327,43 @@ export async function fetchCustomerInspectionReport(
     mileageChecked: report.mileage_checked,
     registrationChecked: report.registration_checked,
     submittedAt: report.submitted_at,
-    images: signedImages.filter((img): img is CustomerInspectionReportImage => img !== null),
+    evidenceExpiresAt: imageRows[0]?.evidence_expires_at ?? null,
+    images: signedImages.filter(
+      (img): img is CustomerInspectionReportImage => img !== null,
+    ),
   };
 }
 
 export type CreateInspectionRequestInput = {
   customerId: string;
+  carId?: string | null;
   registration: string;
   make: string;
   model: string;
-  year: string;
-  contactName: string;
-  contactPhone: string;
+  year?: string | number | null;
+  contactName?: string;
+  contactPhone?: string;
   address: string;
   city: string;
   postcode: string;
   preferredDate: string;
   preferredTime: string;
-  notes: string;
+  notes?: string;
 };
+
+const activeStatuses = [
+  "pending",
+  "confirmed",
+  "assigned",
+  "inspection_scheduled",
+  "inspection_in_progress",
+  "report_submitted",
+] as const;
 
 function parsePreferredDate(value: string) {
   const trimmed = value.trim();
   if (!trimmed) return null;
+  if (trimmed.includes("-")) return trimmed;
   const match = trimmed.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
   if (!match) throw new Error("Preferred date must use DD/MM/YYYY.");
   const day = Number(match[1]);
@@ -356,10 +382,9 @@ function parsePreferredTime(value: string) {
   return `${hour}:${minute}:00`;
 }
 
-function parseYear(value: string) {
-  const trimmed = value.trim();
-  if (!trimmed) return null;
-  const parsed = Number(trimmed);
+function parseYear(value: string | number | null | undefined) {
+  if (!value) return null;
+  const parsed = Number(value);
   const currentYear = new Date().getFullYear();
   if (Number.isInteger(parsed) && parsed >= 1900 && parsed <= currentYear + 1) {
     return parsed;
@@ -367,33 +392,107 @@ function parseYear(value: string) {
   return null;
 }
 
-export async function createCustomerInspectionRequest(input: CreateInspectionRequestInput) {
+export async function createCustomerInspectionRequest(
+  input: CreateInspectionRequestInput,
+) {
   const preferredDate = parsePreferredDate(input.preferredDate);
   const preferredTime = parsePreferredTime(input.preferredTime);
   const externalYear = parseYear(input.year);
 
-  const { data, error } = await supabase
-    .from("verification_requests")
-    .insert({
-      requested_by: input.customerId,
-      inspection_type: "buyer_inspection",
-      vehicle_registration: input.registration.trim().toUpperCase(),
-      external_make: input.make.trim() || null,
-      external_model: input.model.trim() || null,
-      external_year: externalYear,
-      seller_name: input.contactName.trim() || null,
-      seller_phone: input.contactPhone.trim() || null,
-      inspection_address: input.address.trim(),
-      city: input.city.trim(),
-      postcode: input.postcode.trim().toUpperCase(),
-      preferred_date: preferredDate,
-      preferred_time: preferredTime,
-      notes: input.notes.trim() || null,
-      status: "pending",
-    })
-    .select("id")
-    .single();
+  let inspectionType: "seller_pre_inspection" | "buyer_inspection" =
+    "buyer_inspection";
 
-  if (error) throw error;
-  return data?.id;
+  if (input.carId) {
+    const { data: car } = await supabase
+      .from("cars")
+      .select("id,seller_id")
+      .eq("id", input.carId)
+      .eq("status", "active")
+      .maybeSingle();
+
+    if (!car) {
+      throw new Error(
+        "This marketplace listing is no longer available for inspection.",
+      );
+    }
+
+    inspectionType =
+      car.seller_id === input.customerId
+        ? "seller_pre_inspection"
+        : "buyer_inspection";
+
+    const { data: existing } = await supabase
+      .from("verification_requests")
+      .select("id,inspection_type,status,requested_by")
+      .eq("car_id", input.carId)
+      .in("status", [...activeStatuses, "completed"]);
+
+    if (
+      existing?.some((request) =>
+        activeStatuses.includes(request.status as any),
+      )
+    ) {
+      throw new Error("An inspection is already in progress for this vehicle.");
+    }
+
+    if (
+      inspectionType === "seller_pre_inspection" &&
+      existing?.some(
+        (request) => request.inspection_type === "seller_pre_inspection",
+      )
+    ) {
+      throw new Error(
+        "This listing already has an inspection request. Open it from your listings to check its progress.",
+      );
+    }
+
+    if (
+      inspectionType === "buyer_inspection" &&
+      existing?.some(
+        (request) => request.inspection_type === "seller_pre_inspection",
+      )
+    ) {
+      throw new Error(
+        "This listing already has a seller inspection in progress or completed. Use the inspection information on the listing.",
+      );
+    }
+  }
+
+  const { data, error } = await supabase.rpc("create_verification_request", {
+    p_car_id: input.carId || null,
+    p_registration: input.registration.trim().toUpperCase(),
+    p_make: input.make.trim(),
+    p_model: input.model.trim(),
+    p_year: externalYear,
+    p_seller_name: input.contactName?.trim() || "Customer",
+    p_seller_phone: input.contactPhone?.trim() || "Not provided",
+    p_address: input.address.trim(),
+    p_city: input.city.trim(),
+    p_postcode: input.postcode.trim().toUpperCase(),
+    p_preferred_date: preferredDate,
+    p_preferred_time: preferredTime,
+    p_inspection_type: inspectionType,
+    p_notes: input.notes?.trim() || undefined,
+  });
+
+  if (error || !data) {
+    throw new Error(
+      error?.message ||
+        "We could not submit this inspection request. Check the details and try again.",
+    );
+  }
+
+  return data;
+}
+
+export async function cancelCustomerInspectionRequest(inspectionId: string) {
+  const { error } = await supabase.rpc("cancel_own_verification_request", {
+    p_id: inspectionId,
+  });
+
+  if (error) {
+    throw new Error(
+      error.message || "This inspection request can no longer be cancelled.",
+    );
+  }
 }

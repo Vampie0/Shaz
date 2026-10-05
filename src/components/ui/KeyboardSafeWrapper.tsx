@@ -1,15 +1,7 @@
 import React, { Ref } from "react";
-import {
-  Platform,
-  StyleProp,
-  StyleSheet,
-  View,
-  ViewStyle,
-} from "react-native";
+import { Platform, StyleProp, StyleSheet, View, ViewStyle } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-
-import { useAppTheme } from "@/hooks/use-app-theme";
 
 type KeyboardSafeWrapperProps = {
   children: React.ReactNode;
@@ -17,7 +9,6 @@ type KeyboardSafeWrapperProps = {
   contentContainerStyle?: StyleProp<ViewStyle>;
   bottomPadding?: number;
   keyboardVerticalOffset?: number;
-  /** kept for API compatibility — not used by KeyboardAwareScrollView the same way */
   scrollRef?: Ref<any>;
   onScroll?: (...args: any[]) => void;
   keyboardShouldPersistTaps?: "always" | "handled" | "never";
@@ -28,43 +19,33 @@ export function KeyboardSafeWrapper({
   style,
   contentContainerStyle,
   bottomPadding = 120,
-  keyboardVerticalOffset,
   scrollRef,
   onScroll,
-  keyboardShouldPersistTaps = "always",
+  keyboardShouldPersistTaps = "handled",
 }: KeyboardSafeWrapperProps) {
-  const theme = useAppTheme();
   const insets = useSafeAreaInsets();
 
-  const extraScroll =
-    bottomPadding + Math.max(insets.bottom, 16);
+  const extraScroll = bottomPadding + Math.max(insets.bottom, 16);
 
   return (
-    <View
-      style={[
-        styles.flex,
-        { backgroundColor: theme.background, paddingTop: insets.top },
-        style,
-      ]}
-    >
+    <View style={[styles.flex, { backgroundColor: "transparent" }, style]}>
       <KeyboardAwareScrollView
         ref={scrollRef as any}
         style={styles.flex}
         contentContainerStyle={[
-            styles.scrollContent,
-            contentContainerStyle,
-            { paddingBottom: extraScroll },
-          ]}
+          styles.scrollContent,
+          contentContainerStyle,
+          { paddingBottom: extraScroll },
+        ]}
         enableOnAndroid={true}
         enableAutomaticScroll={true}
-        extraScrollHeight={20}
-        extraHeight={75}
+        extraScrollHeight={130}
+        extraHeight={130}
         keyboardShouldPersistTaps={keyboardShouldPersistTaps}
         keyboardDismissMode="none"
         showsVerticalScrollIndicator={false}
-        enableResetScrollToCoords={true}
-        resetScrollToCoords={{ x: 0, y: 0 }}
-        keyboardOpeningTime={Number.MAX_SAFE_INTEGER}
+        enableResetScrollToCoords={false}
+        keyboardOpeningTime={Platform.OS === "android" ? 0 : 250}
         viewIsInsideTabBar={false}
         onScroll={onScroll}
         scrollEventThrottle={onScroll ? 16 : undefined}

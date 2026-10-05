@@ -1,3 +1,5 @@
+// File: src/components/customer/CustomerBookingCard.tsx
+
 import { Ionicons } from "@expo/vector-icons";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
@@ -39,15 +41,17 @@ function statusMeta(status: string) {
     case "completed":
       return { label: "Completed", tone: "success" as const };
     case "cancelled":
-      return { label: "Cancelled", tone: "danger" as const };
+      return { label: "Cancelled", tone: "neutral" as const };
     case "in_progress":
       return { label: "In progress", tone: "info" as const };
     case "on_the_way":
       return { label: "On the way", tone: "info" as const };
     case "assigned":
-      return { label: "Assigned", tone: "warning" as const };
+      return { label: "Assigned", tone: "info" as const };
     case "confirmed":
       return { label: "Confirmed", tone: "success" as const };
+    case "pending":
+      return { label: "Pending", tone: "warning" as const };
     default:
       return { label: titleCase(status), tone: "neutral" as const };
   }
@@ -77,6 +81,7 @@ export default function CustomerBookingCard({
         {
           backgroundColor: theme.surface,
           borderColor: theme.border,
+          shadowColor: theme.overlay,
         },
         pressed && onViewDetails && styles.pressed,
       ]}
@@ -94,13 +99,23 @@ export default function CustomerBookingCard({
           ) : null}
         </View>
 
-        <CustomerStatusBadge label={status.label} tone={status.tone} />
+        <View style={styles.headerRight}>
+          <CustomerStatusBadge label={status.label} tone={status.tone} />
+          {/* SENIOR'S WEB MATCH: QUOTED PRICE */}
+          {booking.quotedPrice ? (
+            <Text style={[styles.priceText, { color: theme.primary }]}>
+              From £{Number(booking.quotedPrice).toLocaleString("en-GB")}
+            </Text>
+          ) : null}
+        </View>
       </View>
 
       <View style={styles.infoList}>
         <View style={styles.infoRow}>
-          <View style={[styles.iconBox, { backgroundColor: theme.primarySoft }]}>
-            <Ionicons name="calendar-outline" size={16} color={theme.primary} />
+          <View
+            style={[styles.iconBox, { backgroundColor: theme.primarySoft }]}
+          >
+            <Ionicons name="calendar-outline" size={15} color={theme.primary} />
           </View>
 
           <Text style={[styles.infoText, { color: theme.textSecondary }]}>
@@ -111,11 +126,23 @@ export default function CustomerBookingCard({
 
         {booking.address ? (
           <View style={styles.infoRow}>
-            <View style={[styles.iconBox, { backgroundColor: theme.surfaceSecondary }]}>
-              <Ionicons name="location-outline" size={16} color={theme.textMuted} />
+            <View
+              style={[
+                styles.iconBox,
+                { backgroundColor: theme.surfaceSecondary },
+              ]}
+            >
+              <Ionicons
+                name="location-outline"
+                size={15}
+                color={theme.textMuted}
+              />
             </View>
 
-            <Text numberOfLines={1} style={[styles.infoText, { color: theme.textSecondary }]}>
+            <Text
+              numberOfLines={1}
+              style={[styles.infoText, { color: theme.textSecondary }]}
+            >
               {booking.address}
             </Text>
           </View>
@@ -130,21 +157,25 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: radius.xl,
     padding: spacing.lg,
-    gap: spacing.lg,
-    elevation: 3,
-    shadowColor: "#000000",
+    gap: spacing.md,
+    elevation: 2,
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
   },
   header: {
     flexDirection: "row",
     alignItems: "flex-start",
+    justifyContent: "space-between",
     gap: spacing.md,
   },
   headerCopy: {
     flex: 1,
     gap: 3,
+  },
+  headerRight: {
+    alignItems: "flex-end",
+    gap: 4,
   },
   service: {
     fontSize: fontSize.md,
@@ -153,8 +184,12 @@ const styles = StyleSheet.create({
   vehicle: {
     fontSize: fontSize.xs,
   },
+  priceText: {
+    fontSize: fontSize.xs + 0.5,
+    fontWeight: fontWeight.bold,
+  },
   infoList: {
-    gap: spacing.sm,
+    gap: 6,
   },
   infoRow: {
     flexDirection: "row",
@@ -162,8 +197,8 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   iconBox: {
-    width: 28,
-    height: 28,
+    width: 26,
+    height: 26,
     borderRadius: radius.sm,
     alignItems: "center",
     justifyContent: "center",

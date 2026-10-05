@@ -3,19 +3,34 @@ import AppInput from "@/components/ui/AppInput";
 import AppModal from "@/components/ui/AppModal";
 import FengxingWheel from "@/components/ui/FengxingWheel";
 import KeyboardScreenContainer from "@/components/ui/KeyboardScreenContainer";
-import { fontSize, fontWeight, layout, radius, spacing } from "@/constants/theme";
+import {
+  fontSize,
+  fontWeight,
+  layout,
+  radius,
+  spacing,
+} from "@/constants/theme";
 import { useAuth } from "@/features/auth/use-auth";
 import { toastError, toastSuccess } from "@/features/toast/toast-store";
 import { useAppTheme } from "@/hooks/use-app-theme";
 import { supabase } from "@/services/supabase/client";
 import { Link } from "expo-router";
 import { useState } from "react";
-import { ActivityIndicator, Keyboard, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import {
+  ActivityIndicator,
+  Keyboard,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 
 export default function LoginScreen() {
   const theme = useAppTheme();
 
-  const { signIn, accessMessage, clearAccessMessage, isInitializing } = useAuth();
+  const { signIn, accessMessage, clearAccessMessage, isInitializing } =
+    useAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -64,9 +79,15 @@ export default function LoginScreen() {
       const message = error instanceof Error ? error.message.toLowerCase() : "";
 
       if (message.includes("invalid login credentials")) {
-        toastError("The email or password you entered is incorrect.", "Invalid Credentials");
+        toastError(
+          "The email or password you entered is incorrect.",
+          "Invalid Credentials",
+        );
       } else {
-        toastError("We couldn't sign you in. Please try again.", "Sign In Failed");
+        toastError(
+          "We couldn't sign you in. Please try again.",
+          "Sign In Failed",
+        );
       }
     } finally {
       setSubmitting(false);
@@ -89,7 +110,10 @@ export default function LoginScreen() {
 
       setForgotModalVisible(false);
       setForgotEmail("");
-      toastSuccess("Password reset instructions sent to your email!", "Email Sent");
+      toastSuccess(
+        "Password reset instructions sent to your email!",
+        "Email Sent",
+      );
     } catch (err) {
       console.error("Password reset error:", err);
       const msg =
@@ -104,7 +128,10 @@ export default function LoginScreen() {
 
   return (
     <>
-      <KeyboardScreenContainer bottomPadding={200} contentContainerStyle={styles.scrollContent}>
+      <KeyboardScreenContainer
+        bottomPadding={200}
+        contentContainerStyle={styles.scrollContent}
+      >
         <View style={styles.screen}>
           {/* BRAND */}
           <View style={styles.brandSection}>
@@ -112,8 +139,9 @@ export default function LoginScreen() {
               <FengxingWheel size={52} duration={9000} />
 
               <View style={styles.wordmark}>
-                <Text style={[styles.feng, { color: theme.text }]}>feng</Text>
-                <Text style={[styles.xing, { color: theme.primary }]}>xing</Text>
+                <Text style={[styles.xing, { color: theme.primary }]}>
+                  Shaz
+                </Text>
               </View>
             </View>
 
@@ -125,7 +153,7 @@ export default function LoginScreen() {
           {/* INTRO */}
           <View style={styles.intro}>
             <Text style={[styles.eyebrow, { color: theme.primary }]}>
-              FENGXING ACCOUNT
+              Shaz ACCOUNT
             </Text>
 
             <Text style={[styles.title, { color: theme.text }]}>
@@ -133,7 +161,7 @@ export default function LoginScreen() {
             </Text>
 
             <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
-              Access your Fengxing account securely.
+              Access your Shaz account securely.
             </Text>
           </View>
 
@@ -183,7 +211,10 @@ export default function LoginScreen() {
                   setForgotModalVisible(true);
                 }}
                 hitSlop={8}
-                style={({ pressed }) => [styles.forgotLink, pressed && styles.pressed]}
+                style={({ pressed }) => [
+                  styles.forgotLink,
+                  pressed && styles.pressed,
+                ]}
               >
                 <Text style={[styles.forgotText, { color: theme.primary }]}>
                   Forgot password?
@@ -201,17 +232,27 @@ export default function LoginScreen() {
 
               {/* CUSTOMER REGISTRATION */}
               <View style={styles.registerRow}>
-                <Text style={[styles.registerQuestion, { color: theme.textSecondary }]}>
-                  New to Fengxing?
+                <Text
+                  style={[
+                    styles.registerQuestion,
+                    { color: theme.textSecondary },
+                  ]}
+                >
+                  New to Shaz?
                 </Text>
 
                 <Link href="/register" asChild prefetch>
                   <Pressable
                     accessibilityRole="button"
                     hitSlop={10}
-                    style={({ pressed }) => [styles.registerButton, pressed && styles.pressed]}
+                    style={({ pressed }) => [
+                      styles.registerButton,
+                      pressed && styles.pressed,
+                    ]}
                   >
-                    <Text style={[styles.registerText, { color: theme.primary }]}>
+                    <Text
+                      style={[styles.registerText, { color: theme.primary }]}
+                    >
                       Create account
                     </Text>
                   </Pressable>
@@ -222,9 +263,11 @@ export default function LoginScreen() {
 
           {/* FOOTER */}
           <View style={styles.footer}>
-            <View style={[styles.footerLine, { backgroundColor: theme.border }]} />
+            <View
+              style={[styles.footerLine, { backgroundColor: theme.border }]}
+            />
             <Text style={[styles.footerText, { color: theme.textMuted }]}>
-              Secure access powered by Fengxing
+              Secure access powered by Shaz
             </Text>
           </View>
         </View>
@@ -254,7 +297,11 @@ export default function LoginScreen() {
             autoCapitalize="none"
             style={[
               styles.modalInput,
-              { color: theme.text, backgroundColor: theme.surfaceSecondary, borderColor: theme.border },
+              {
+                color: theme.text,
+                backgroundColor: theme.surfaceSecondary,
+                borderColor: theme.border,
+              },
             ]}
           />
 
@@ -292,13 +339,34 @@ const styles = StyleSheet.create({
   brandSection: { marginBottom: 48 },
   brandRow: { flexDirection: "row", alignItems: "center", gap: 13 },
   wordmark: { flexDirection: "row", alignItems: "center" },
-  feng: { fontSize: 42, lineHeight: 46, fontWeight: fontWeight.bold, letterSpacing: -1.8 },
-  xing: { fontSize: 42, lineHeight: 46, fontWeight: fontWeight.bold, letterSpacing: -1.8 },
-  brandCaption: { marginTop: 10, marginLeft: 66, fontSize: 9.5, fontWeight: fontWeight.bold, letterSpacing: 1.65 },
+
+  xing: {
+    fontSize: 42,
+    lineHeight: 46,
+    fontWeight: fontWeight.bold,
+    letterSpacing: -1.8,
+  },
+  brandCaption: {
+    marginTop: 10,
+    marginLeft: 66,
+    fontSize: 9.5,
+    fontWeight: fontWeight.bold,
+    letterSpacing: 1.65,
+  },
 
   intro: { marginBottom: 32 },
-  eyebrow: { marginBottom: 12, fontSize: 11, fontWeight: fontWeight.bold, letterSpacing: 1.5 },
-  title: { fontSize: 38, lineHeight: 42, fontWeight: fontWeight.bold, letterSpacing: -1.3 },
+  eyebrow: {
+    marginBottom: 12,
+    fontSize: 11,
+    fontWeight: fontWeight.bold,
+    letterSpacing: 1.5,
+  },
+  title: {
+    fontSize: 38,
+    lineHeight: 42,
+    fontWeight: fontWeight.bold,
+    letterSpacing: -1.3,
+  },
   subtitle: { marginTop: 12, fontSize: fontSize.md, lineHeight: 23 },
 
   form: { gap: spacing.lg },
@@ -307,7 +375,14 @@ const styles = StyleSheet.create({
   forgotText: { fontSize: fontSize.xs, fontWeight: fontWeight.bold },
 
   actionArea: { marginTop: 4, gap: 20 },
-  registerRow: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 5, marginTop: 4, marginBottom: 28 },
+  registerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 5,
+    marginTop: 4,
+    marginBottom: 28,
+  },
   registerQuestion: { fontSize: 13, lineHeight: 20 },
   registerButton: { minHeight: 30, justifyContent: "center" },
   registerText: { fontSize: 13, fontWeight: fontWeight.bold },
@@ -330,7 +405,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     borderRadius: radius.md,
   },
-  sendResetText: { color: "#FFFFFF", fontSize: fontSize.sm, fontWeight: fontWeight.bold },
+  sendResetText: {
+    color: "#FFFFFF",
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.bold,
+  },
 
   disabled: { opacity: 0.5 },
   pressed: { opacity: 0.55 },

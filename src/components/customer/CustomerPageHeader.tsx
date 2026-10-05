@@ -1,17 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
-import {
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import {
-  fontSize,
-  fontWeight,
-  radius,
-  spacing,
-} from "@/constants/theme";
+import { fontSize, fontWeight, radius, spacing } from "@/constants/theme";
 import { useAppTheme } from "@/hooks/use-app-theme";
 
 type CustomerPageHeaderProps = {
@@ -31,12 +21,9 @@ export default function CustomerPageHeader({
   onAction,
   actionVariant = "primary",
 }: CustomerPageHeaderProps) {
-  const theme =
-    useAppTheme();
+  const theme = useAppTheme();
 
-  const primary =
-    actionVariant ===
-    "primary";
+  const primary = actionVariant === "primary";
 
   return (
     <View style={styles.container}>
@@ -46,8 +33,7 @@ export default function CustomerPageHeader({
             style={[
               styles.eyebrow,
               {
-                color:
-                  theme.primary,
+                color: theme.primary,
               },
             ]}
           >
@@ -59,8 +45,7 @@ export default function CustomerPageHeader({
           style={[
             styles.title,
             {
-              color:
-                theme.text,
+              color: theme.text,
             },
           ]}
         >
@@ -71,8 +56,7 @@ export default function CustomerPageHeader({
           style={[
             styles.subtitle,
             {
-              color:
-                theme.textSecondary,
+              color: theme.textSecondary,
             },
           ]}
         >
@@ -80,35 +64,24 @@ export default function CustomerPageHeader({
         </Text>
       </View>
 
-      {actionLabel &&
-      onAction ? (
+      {actionLabel && onAction ? (
         <Pressable
           accessibilityRole="button"
           onPress={onAction}
           style={({ pressed }) => [
             styles.action,
             {
-              backgroundColor:
-                primary
-                  ? theme.primary
-                  : theme.surface,
-              borderColor:
-                primary
-                  ? theme.primary
-                  : theme.border,
+              backgroundColor: primary ? theme.primary : theme.surface,
+              borderColor: primary ? theme.primary : theme.border,
             },
-            pressed &&
-              styles.pressed,
+            pressed && styles.pressed,
           ]}
         >
           <Text
             style={[
               styles.actionText,
               {
-                color:
-                  primary
-                    ? "#FFFFFF"
-                    : theme.text,
+                color: primary ? theme.navText : theme.text,
               },
             ]}
           >
@@ -118,11 +91,7 @@ export default function CustomerPageHeader({
           <Ionicons
             name="arrow-forward"
             size={17}
-            color={
-              primary
-                ? "#FFFFFF"
-                : theme.text
-            }
+            color={primary ? theme.navText : theme.text}
           />
         </Pressable>
       ) : null}
@@ -130,69 +99,57 @@ export default function CustomerPageHeader({
   );
 }
 
-const styles =
-  StyleSheet.create({
-    container: {
-      gap: spacing.lg,
-    },
+const styles = StyleSheet.create({
+  container: {
+    gap: spacing.lg,
+  },
 
-    copy: {
-      gap: spacing.sm,
-    },
+  copy: {
+    gap: spacing.sm,
+  },
 
-    eyebrow: {
-      fontSize:
-        fontSize.xs,
-      fontWeight:
-        fontWeight.bold,
-      letterSpacing: 1.4,
-    },
+  eyebrow: {
+    fontSize: fontSize.xs,
+    fontWeight: fontWeight.bold,
+    letterSpacing: 1.4,
+  },
 
-    title: {
-      fontSize: 30,
-      lineHeight: 36,
-      fontWeight:
-        fontWeight.bold,
-      letterSpacing: -0.8,
-    },
+  title: {
+    fontSize: 30,
+    lineHeight: 36,
+    fontWeight: fontWeight.bold,
+    letterSpacing: -0.8,
+  },
 
-    subtitle: {
-      maxWidth: 560,
-      fontSize:
-        fontSize.sm,
-      lineHeight: 21,
-    },
+  subtitle: {
+    maxWidth: 560,
+    fontSize: fontSize.sm,
+    lineHeight: 21,
+  },
 
-    action: {
-      minHeight: 46,
-      alignSelf:
-        "flex-start",
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent:
-        "center",
-      gap: spacing.sm,
-      paddingHorizontal:
-        spacing.lg,
-      borderWidth: 1,
-      borderRadius:
-        radius.md,
-    },
+  action: {
+    minHeight: 46,
+    alignSelf: "flex-start",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    borderWidth: 1,
+    borderRadius: radius.md,
+  },
 
-    actionText: {
-      fontSize:
-        fontSize.sm,
-      fontWeight:
-        fontWeight.bold,
-    },
+  actionText: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.bold,
+  },
 
-    pressed: {
-      opacity: 0.72,
-      transform: [
-        {
-          scale: 0.985,
-        },
-      ],
-    },
-  });
-
+  pressed: {
+    opacity: 0.72,
+    transform: [
+      {
+        scale: 0.985,
+      },
+    ],
+  },
+});

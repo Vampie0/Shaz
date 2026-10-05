@@ -26,7 +26,7 @@ function openNotificationJob(
       .request.content.data;
 
   const assignmentId =
-    typeof data.assignmentId ===
+    typeof data?.assignmentId ===
     "string"
       ? data.assignmentId
       : null;

@@ -1,3 +1,5 @@
+// File: src/components/customer/services/MobileServiceDetailsSheet.tsx
+
 import { Ionicons } from "@expo/vector-icons";
 import {
   Modal,
@@ -8,12 +10,7 @@ import {
   View,
 } from "react-native";
 
-import {
-  fontSize,
-  fontWeight,
-  radius,
-  spacing,
-} from "@/constants/theme";
+import { fontSize, fontWeight, radius, spacing } from "@/constants/theme";
 import { useAppTheme } from "@/hooks/use-app-theme";
 import type { CustomerServiceType } from "@/types/customer-service";
 
@@ -21,22 +18,15 @@ type MobileServiceDetailsSheetProps = {
   visible: boolean;
   service: CustomerServiceType | null;
   onClose: () => void;
-  onBook: (
-    service: CustomerServiceType,
-  ) => void;
+  onBook: (service: CustomerServiceType) => void;
 };
 
-function formatPrice(
-  value: number,
-) {
+function formatPrice(value: number) {
   return (
     "£" +
-    value.toLocaleString(
-      "en-GB",
-      {
-        maximumFractionDigits: 0,
-      },
-    )
+    value.toLocaleString("en-GB", {
+      maximumFractionDigits: 0,
+    })
   );
 }
 
@@ -46,16 +36,20 @@ export default function MobileServiceDetailsSheet({
   onClose,
   onBook,
 }: MobileServiceDetailsSheetProps) {
-  const theme =
-    useAppTheme();
+  const theme = useAppTheme();
 
   if (!service) {
     return null;
   }
 
-  const description =
-    service.shortDescription ??
-    service.description;
+  const description = service.shortDescription ?? service.description;
+
+  // SENIOR WEB MATCH: "What to expect" steps
+  const expectations = [
+    "Choose a preferred date and time.",
+    "Our team confirms the visit and assigns a worker.",
+    "The work is carried out at your selected location.",
+  ];
 
   return (
     <Modal
@@ -63,9 +57,7 @@ export default function MobileServiceDetailsSheet({
       visible={visible}
       animationType="slide"
       statusBarTranslucent
-      onRequestClose={
-        onClose
-      }
+      onRequestClose={onClose}
     >
       <View style={styles.root}>
         <Pressable
@@ -79,10 +71,8 @@ export default function MobileServiceDetailsSheet({
           style={[
             styles.sheet,
             {
-              backgroundColor:
-                theme.surface,
-              borderColor:
-                theme.border,
+              backgroundColor: theme.surface,
+              borderColor: theme.border,
             },
           ]}
         >
@@ -90,17 +80,14 @@ export default function MobileServiceDetailsSheet({
             style={[
               styles.handle,
               {
-                backgroundColor:
-                  theme.border,
+                backgroundColor: theme.border,
               },
             ]}
           />
 
           <ScrollView
             showsVerticalScrollIndicator={false}
-            contentContainerStyle={
-              styles.content
-            }
+            contentContainerStyle={styles.content}
           >
             <View style={styles.topRow}>
               <View style={styles.headingCopy}>
@@ -108,8 +95,7 @@ export default function MobileServiceDetailsSheet({
                   style={[
                     styles.eyebrow,
                     {
-                      color:
-                        theme.primary,
+                      color: theme.primary,
                     },
                   ]}
                 >
@@ -120,8 +106,7 @@ export default function MobileServiceDetailsSheet({
                   style={[
                     styles.title,
                     {
-                      color:
-                        theme.text,
+                      color: theme.text,
                     },
                   ]}
                 >
@@ -137,20 +122,12 @@ export default function MobileServiceDetailsSheet({
                 style={({ pressed }) => [
                   styles.closeButton,
                   {
-                    backgroundColor:
-                      theme.surfaceSecondary,
+                    backgroundColor: theme.surfaceSecondary,
                   },
-                  pressed &&
-                    styles.pressed,
+                  pressed && styles.pressed,
                 ]}
               >
-                <Ionicons
-                  name="close"
-                  size={22}
-                  color={
-                    theme.text
-                  }
-                />
+                <Ionicons name="close" size={22} color={theme.text} />
               </Pressable>
             </View>
 
@@ -158,8 +135,7 @@ export default function MobileServiceDetailsSheet({
               style={[
                 styles.description,
                 {
-                  color:
-                    theme.textSecondary,
+                  color: theme.textSecondary,
                 },
               ]}
             >
@@ -170,8 +146,7 @@ export default function MobileServiceDetailsSheet({
               style={[
                 styles.priceBlock,
                 {
-                  backgroundColor:
-                    theme.nav,
+                  backgroundColor: theme.nav,
                 },
               ]}
             >
@@ -179,8 +154,7 @@ export default function MobileServiceDetailsSheet({
                 style={[
                   styles.priceLabel,
                   {
-                    color:
-                      theme.primary,
+                    color: theme.primary,
                   },
                 ]}
               >
@@ -191,22 +165,18 @@ export default function MobileServiceDetailsSheet({
                 style={[
                   styles.price,
                   {
-                    color:
-                      theme.navText,
+                    color: theme.navText,
                   },
                 ]}
               >
-                {formatPrice(
-                  service.basePrice,
-                )}
+                {formatPrice(service.basePrice)}
               </Text>
 
               <Text
                 style={[
                   styles.priceHint,
                   {
-                    color:
-                      theme.navMuted,
+                    color: theme.navMuted,
                   },
                 ]}
               >
@@ -218,8 +188,7 @@ export default function MobileServiceDetailsSheet({
               style={[
                 styles.divider,
                 {
-                  backgroundColor:
-                    theme.border,
+                  backgroundColor: theme.border,
                 },
               ]}
             />
@@ -230,17 +199,14 @@ export default function MobileServiceDetailsSheet({
                   style={[
                     styles.metaIcon,
                     {
-                      backgroundColor:
-                        theme.primarySoft,
+                      backgroundColor: theme.primarySoft,
                     },
                   ]}
                 >
                   <Ionicons
                     name="cash-outline"
                     size={20}
-                    color={
-                      theme.primary
-                    }
+                    color={theme.primary}
                   />
                 </View>
 
@@ -249,8 +215,7 @@ export default function MobileServiceDetailsSheet({
                     style={[
                       styles.metaLabel,
                       {
-                        color:
-                          theme.textMuted,
+                        color: theme.textMuted,
                       },
                     ]}
                   >
@@ -261,37 +226,29 @@ export default function MobileServiceDetailsSheet({
                     style={[
                       styles.metaValue,
                       {
-                        color:
-                          theme.text,
+                        color: theme.text,
                       },
                     ]}
                   >
-                    From{" "}
-                    {formatPrice(
-                      service.basePrice,
-                    )}
+                    From {formatPrice(service.basePrice)}
                   </Text>
                 </View>
               </View>
 
-              {service.estimatedDurationMinutes !==
-              null ? (
+              {service.estimatedDurationMinutes !== null ? (
                 <View style={styles.metaRow}>
                   <View
                     style={[
                       styles.metaIcon,
                       {
-                        backgroundColor:
-                          theme.surfaceSecondary,
+                        backgroundColor: theme.surfaceSecondary,
                       },
                     ]}
                   >
                     <Ionicons
                       name="time-outline"
                       size={20}
-                      color={
-                        theme.textSecondary
-                      }
+                      color={theme.textSecondary}
                     />
                   </View>
 
@@ -300,8 +257,7 @@ export default function MobileServiceDetailsSheet({
                       style={[
                         styles.metaLabel,
                         {
-                          color:
-                            theme.textMuted,
+                          color: theme.textMuted,
                         },
                       ]}
                     >
@@ -312,42 +268,71 @@ export default function MobileServiceDetailsSheet({
                       style={[
                         styles.metaValue,
                         {
-                          color:
-                            theme.text,
+                          color: theme.text,
                         },
                       ]}
                     >
-                      {service.estimatedDurationMinutes} minutes
+                      {service.estimatedDurationMinutes} mins
                     </Text>
                   </View>
                 </View>
               ) : null}
             </View>
 
+            <View
+              style={[
+                styles.divider,
+                {
+                  backgroundColor: theme.border,
+                },
+              ]}
+            />
+
+            {/* SENIOR WEB MATCH: WHAT TO EXPECT */}
+            <View style={styles.expectSection}>
+              <Text style={[styles.expectTitle, { color: theme.text }]}>
+                What to expect
+              </Text>
+
+              <View style={styles.expectList}>
+                {expectations.map((item, index) => (
+                  <View
+                    key={index}
+                    style={[styles.expectItem, { borderColor: theme.border }]}
+                  >
+                    <Text
+                      style={[styles.expectNumber, { color: theme.primary }]}
+                    >
+                      0{index + 1}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.expectText,
+                        { color: theme.textSecondary },
+                      ]}
+                    >
+                      {item}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+
             <Pressable
               accessibilityRole="button"
-              onPress={() =>
-                onBook(service)
-              }
+              onPress={() => onBook(service)}
               style={({ pressed }) => [
                 styles.bookButton,
                 {
-                  backgroundColor:
-                    theme.primary,
+                  backgroundColor: theme.primary,
                 },
-                pressed &&
-                  styles.pressed,
+                pressed && styles.pressed,
               ]}
             >
-              <Text style={styles.bookButtonText}>
+              <Text style={[styles.bookButtonText, { color: theme.navText }]}>
                 Book this service
               </Text>
-
-              <Ionicons
-                name="arrow-forward"
-                size={19}
-                color="#FFFFFF"
-              />
+              <Ionicons name="arrow-forward" size={19} color={theme.navText} />
             </Pressable>
           </ScrollView>
         </View>
@@ -356,190 +341,167 @@ export default function MobileServiceDetailsSheet({
   );
 }
 
-const styles =
-  StyleSheet.create({
-    root: {
-      flex: 1,
-      justifyContent:
-        "flex-end",
-    },
+const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+    justifyContent: "flex-end",
+  },
+  backdrop: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: "rgba(3, 12, 22, 0.52)",
+  },
+  sheet: {
+    maxHeight: "90%",
+    overflow: "hidden",
+    borderWidth: 1,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+  },
+  handle: {
+    width: 46,
+    height: 5,
+    alignSelf: "center",
+    marginTop: 10,
+    borderRadius: 999,
+  },
+  content: {
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.xxxl,
+    gap: spacing.lg,
+  },
+  topRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: spacing.md,
+  },
+  headingCopy: {
+    flex: 1,
+    gap: 5,
+  },
+  eyebrow: {
+    fontSize: fontSize.xs,
+    fontWeight: fontWeight.bold,
+    letterSpacing: 1.3,
+  },
+  title: {
+    fontSize: 28,
+    lineHeight: 34,
+    fontWeight: fontWeight.bold,
+    letterSpacing: -0.6,
+  },
+  closeButton: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  description: {
+    fontSize: fontSize.md,
+    lineHeight: 24,
+  },
+  priceBlock: {
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.xl,
+    borderTopLeftRadius: 8,
+    borderTopRightRadius: 24,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 8,
+    gap: 5,
+  },
+  priceLabel: {
+    fontSize: 11,
+    fontWeight: fontWeight.bold,
+    letterSpacing: 1.3,
+  },
+  price: {
+    fontSize: 34,
+    lineHeight: 40,
+    fontWeight: fontWeight.bold,
+    letterSpacing: -0.8,
+  },
+  priceHint: {
+    marginTop: 3,
+    fontSize: fontSize.sm,
+    lineHeight: 20,
+  },
+  divider: {
+    height: StyleSheet.hairlineWidth,
+  },
+  metaSection: {
+    gap: spacing.lg,
+  },
+  metaRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+  },
+  metaIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  metaCopy: {
+    flex: 1,
+    gap: 3,
+  },
+  metaLabel: {
+    fontSize: 10,
+    fontWeight: fontWeight.bold,
+    letterSpacing: 0.9,
+  },
+  metaValue: {
+    fontSize: fontSize.md,
+    fontWeight: fontWeight.bold,
+  },
 
-    backdrop: {
-      ...StyleSheet.absoluteFillObject,
-      backgroundColor:
-        "rgba(3, 12, 22, 0.52)",
-    },
+  // EXPECT SECTION STYLES
+  expectSection: {
+    gap: spacing.md,
+  },
+  expectTitle: {
+    fontSize: fontSize.lg,
+    fontWeight: fontWeight.bold,
+  },
+  expectList: {
+    gap: spacing.sm,
+  },
+  expectItem: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: spacing.sm,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderRadius: radius.md,
+  },
+  expectNumber: {
+    fontSize: fontSize.md,
+    fontWeight: fontWeight.bold,
+  },
+  expectText: {
+    flex: 1,
+    fontSize: fontSize.sm,
+    lineHeight: 20,
+  },
 
-    sheet: {
-      maxHeight: "82%",
-      overflow: "hidden",
-      borderWidth: 1,
-      borderTopLeftRadius: 28,
-      borderTopRightRadius: 28,
-    },
-
-    handle: {
-      width: 46,
-      height: 5,
-      alignSelf: "center",
-      marginTop: 10,
-      borderRadius: 999,
-    },
-
-    content: {
-      paddingHorizontal:
-        spacing.xl,
-      paddingTop:
-        spacing.lg,
-      paddingBottom:
-        spacing.xxxl,
-      gap: spacing.lg,
-    },
-
-    topRow: {
-      flexDirection: "row",
-      alignItems:
-        "flex-start",
-      gap: spacing.md,
-    },
-
-    headingCopy: {
-      flex: 1,
-      gap: 5,
-    },
-
-    eyebrow: {
-      fontSize:
-        fontSize.xs,
-      fontWeight:
-        fontWeight.bold,
-      letterSpacing: 1.3,
-    },
-
-    title: {
-      fontSize: 28,
-      lineHeight: 34,
-      fontWeight:
-        fontWeight.bold,
-      letterSpacing: -0.6,
-    },
-
-    closeButton: {
-      width: 42,
-      height: 42,
-      borderRadius: 21,
-      alignItems: "center",
-      justifyContent:
-        "center",
-    },
-
-    description: {
-      fontSize:
-        fontSize.md,
-      lineHeight: 24,
-    },
-
-    priceBlock: {
-      paddingHorizontal:
-        spacing.xl,
-      paddingVertical:
-        spacing.xl,
-      borderTopLeftRadius: 8,
-      borderTopRightRadius: 24,
-      borderBottomLeftRadius: 24,
-      borderBottomRightRadius: 8,
-      gap: 5,
-    },
-
-    priceLabel: {
-      fontSize: 11,
-      fontWeight:
-        fontWeight.bold,
-      letterSpacing: 1.3,
-    },
-
-    price: {
-      fontSize: 34,
-      lineHeight: 40,
-      fontWeight:
-        fontWeight.bold,
-      letterSpacing: -0.8,
-    },
-
-    priceHint: {
-      marginTop: 3,
-      fontSize:
-        fontSize.sm,
-      lineHeight: 20,
-    },
-
-    divider: {
-      height:
-        StyleSheet.hairlineWidth,
-    },
-
-    metaSection: {
-      gap: spacing.lg,
-    },
-
-    metaRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: spacing.md,
-    },
-
-    metaIcon: {
-      width: 44,
-      height: 44,
-      borderRadius: 14,
-      alignItems: "center",
-      justifyContent:
-        "center",
-    },
-
-    metaCopy: {
-      flex: 1,
-      gap: 3,
-    },
-
-    metaLabel: {
-      fontSize: 10,
-      fontWeight:
-        fontWeight.bold,
-      letterSpacing: 0.9,
-    },
-
-    metaValue: {
-      fontSize:
-        fontSize.md,
-      fontWeight:
-        fontWeight.bold,
-    },
-
-    bookButton: {
-      minHeight: 54,
-      marginTop: spacing.sm,
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent:
-        "center",
-      gap: spacing.sm,
-      borderRadius:
-        radius.lg,
-      paddingHorizontal:
-        spacing.lg,
-    },
-
-    bookButtonText: {
-      color: "#FFFFFF",
-      fontSize:
-        fontSize.md,
-      fontWeight:
-        fontWeight.bold,
-    },
-
-    pressed: {
-      opacity: 0.7,
-    },
-  });
-
+  bookButton: {
+    minHeight: 54,
+    marginTop: spacing.md,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.sm,
+    borderRadius: radius.lg,
+    paddingHorizontal: spacing.lg,
+  },
+  bookButtonText: {
+    fontSize: fontSize.md,
+    fontWeight: fontWeight.bold,
+  },
+  pressed: {
+    opacity: 0.7,
+  },
+});

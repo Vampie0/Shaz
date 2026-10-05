@@ -1,6 +1,4 @@
-export type WorkerJobKind =
-  | "service"
-  | "inspection";
+export type WorkerJobKind = "service" | "inspection";
 
 export type AssignmentStatus =
   | "assigned"
@@ -29,20 +27,20 @@ export type VerificationRequestStatus =
   | "completed"
   | "cancelled";
 
-export type WorkerJobStatus =
-  | ServiceBookingStatus
-  | VerificationRequestStatus;
+export type InspectionType = "seller_pre_inspection" | "buyer_inspection";
 
-export type WorkerJobBucket =
-  | "upcoming"
-  | "active"
-  | "completed";
+export type WorkerJobStatus = ServiceBookingStatus | VerificationRequestStatus;
+
+export type WorkerJobBucket = "upcoming" | "active" | "completed";
 
 export type WorkerJob = {
   assignmentId: string;
   jobId: string;
-
+  customerName: string | null;
+  customerPhone: string | null;
   kind: WorkerJobKind;
+  jobTypeLabel: string;
+  inspectionType: InspectionType | null;
 
   assignmentStatus: AssignmentStatus;
   status: WorkerJobStatus;
@@ -65,13 +63,9 @@ export type WorkerJob = {
 };
 
 export type WorkerJobDetail = WorkerJob & {
-  customerName: string | null;
-  customerPhone: string | null;
-
   serviceTypeId: string | null;
   carId: string | null;
 
   mileage: number | null;
   vehicleYear: number | null;
 };
-

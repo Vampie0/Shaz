@@ -1,36 +1,31 @@
-import {
-  router,
-} from "expo-router";
-import {
-  useCallback,
-  useMemo,
-} from "react";
-import {
-  FlatList,
-  Platform,
-  RefreshControl,
-  StyleSheet,
-  View,
-} from "react-native";
-
-import JobCard from "@/components/jobs/JobCard";
 import InspectorListState from "@/components/inspector/InspectorListState";
 import InspectorScreenHeader from "@/components/inspector/InspectorScreenHeader";
+import JobCard from "@/components/jobs/JobCard";
 import ScreenContainer from "@/components/ui/ScreenContainer";
+import { useAuth } from "@/features/auth/use-auth";
 import {
   getJobBucket,
+  isJobCancelled,
   sortJobsDescending,
 } from "@/features/jobs/job.helpers";
 import { useWorkerJobs } from "@/features/jobs/use-worker-jobs";
-import { useAuth } from "@/features/auth/use-auth";
 import { useAppTheme } from "@/hooks/use-app-theme";
-import type {
-  WorkerJob,
-} from "@/types/job";
+import { useSingleNavigation } from "@/hooks/use-single-navigation";
+import type { WorkerJob } from "@/types/job";
+import { useCallback, useMemo } from "react";
+import {
+  ActivityIndicator,
+  FlatList,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 
 export default function HistoryScreen() {
   const theme = useAppTheme();
   const { profile } = useAuth();
+  const { navigate, isBlocked } = useSingleNavigation();
 
   const {
     data = [],
@@ -38,133 +33,112 @@ export default function HistoryScreen() {
     isFetching,
     isError,
     refetch,
-  } = useWorkerJobs(
-    profile?.id,
-  );
+  } = useWorkerJobs(profile?.id);
 
-  const jobs = useMemo(
-    () =>
-      sortJobsDescending(
-        data.filter(
-          (job) =>
-            getJobBucket(job) ===
-            "completed",
-        ),
-      ),
-    [data],
-  );
+  const jobs = useMemo(() => {
+    return sortJobsDescending(
+      data.filter((job) => {
+        const bucket = getJobBucket(job);
+        return bucket === "completed" || isJobCancelled(job);
+      }),
+    );
+  }, [data]);
 
   const openJob = useCallback(
     (job: WorkerJob) => {
-      router.push({
-        pathname: "/jobs/[id]",
-        params: {
-          id: job.assignmentId,
-        },
-      });
+      if (isBlocked) return;
+      navigate("/jobs/[id]" as any, { id: job.assignmentId });
     },
-    [],
+    [isBlocked, navigate],
   );
+
+  // FIX: FullScreenLoader replaced with ActivityIndicator
+  if (isLoading && data.length === 0) {
+    return (
+      <ScreenContainer>
+        <InspectorScreenHeader
+          eyebrow="HISTORY"
+          title="Completed Jobs"
+          subtitle="Loading..."
+        />
+        <View
+          style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+        >
+          <ActivityIndicator size="large" color={theme.primary} />
+        </View>
+      </ScreenContainer>
+    );
+  }
 
   return (
     <ScreenContainer>
       <FlatList
         data={jobs}
-        keyExtractor={(item) =>
-          item.assignmentId
-        }
+        keyExtractor={(item) => item.assignmentId}
         renderItem={({ item }) => (
-          <JobCard
-            job={item}
-            showDate
-            onPress={() =>
-              openJob(item)
-            }
-          />
+          <JobCard job={item} showDate onPress={() => openJob(item)} />
         )}
         ItemSeparatorComponent={() => (
-          <View
-            style={[
-              styles.separator,
-              {
-                backgroundColor:
-                  theme.border,
-              },
-            ]}
-          />
+          <View style={[styles.separator, { backgroundColor: theme.border }]} />
         )}
         ListHeaderComponent={
-          <InspectorScreenHeader
-            eyebrow="HISTORY"
-            title="Completed work"
-            subtitle="Your finished service and inspection jobs."
-          />
+          <View style={styles.headerRow}>
+            <View style={{ flex: 1 }}>
+              <InspectorScreenHeader
+                eyebrow="HISTORY"
+                title="Completed & Past Jobs"
+                subtitle="History of finished operations."
+              />
+            </View>
+            {jobs.length > 0 && (
+              <View
+                style={[
+                  styles.countBadge,
+                  { backgroundColor: theme.successSoft },
+                ]}
+              >
+                <Text style={[styles.countText, { color: theme.success }]}>
+                  {jobs.length} Completed
+                </Text>
+              </View>
+            )}
+          </View>
         }
         ListEmptyComponent={
-          isLoading ? (
-            <InspectorListState
-              loading
-              title="Loading history"
-              message="Getting your completed jobs."
-            />
-          ) : isError ? (
-            <InspectorListState
-              title="Couldn't load history"
-              message="Completed jobs could not be loaded right now."
-              onRetry={() => {
-                void refetch();
-              }}
-            />
-          ) : (
-            <InspectorListState
-              title="No completed jobs"
-              message="Completed service and inspection jobs will appear here."
-            />
-          )
+          <InspectorListState
+            title="No past jobs"
+            message="Your finished work will appear here."
+          />
         }
         refreshControl={
           <RefreshControl
-            refreshing={
-              isFetching &&
-              !isLoading
-            }
-            onRefresh={() => {
-              void refetch();
-            }}
-            tintColor={
-              theme.primary
-            }
-            colors={[
-              theme.primary,
-            ]}
+            refreshing={isFetching && !isLoading}
+            onRefresh={() => void refetch()}
+            tintColor={theme.primary}
+            colors={[theme.primary]}
           />
         }
-        contentContainerStyle={
-          styles.content
-        }
-        showsVerticalScrollIndicator={
-          false
-        }
-        initialNumToRender={8}
-        maxToRenderPerBatch={8}
-        windowSize={7}
-        removeClippedSubviews={
-          Platform.OS === "android"
-        }
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
       />
     </ScreenContainer>
   );
 }
 
-const styles =
-  StyleSheet.create({
-    content: {
-      flexGrow: 1,
-      paddingBottom: 24,
-    },
-
-    separator: {
-      height: StyleSheet.hairlineWidth,
-    },
-  });
-
+const styles = StyleSheet.create({
+  content: { flexGrow: 1, paddingBottom: 24 },
+  separator: { height: StyleSheet.hairlineWidth },
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    paddingTop: 12,
+  },
+  countBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    marginTop: 18,
+  },
+  countText: { fontSize: 11, fontWeight: "bold" },
+});

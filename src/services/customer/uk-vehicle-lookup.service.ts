@@ -1,3 +1,5 @@
+// File: src/services/customer/uk-vehicle-lookup.service.ts
+
 export type UkVehicleLookupResult = {
   make: string;
   model: string;
@@ -5,6 +7,9 @@ export type UkVehicleLookupResult = {
   fuelType: "petrol" | "diesel" | "hybrid" | "electric";
   colour: string;
   registration: string;
+  engineSize?: string;
+  engineCapacityCc?: number | null;
+  motExpiry?: string | null;
 };
 
 export async function fetchUkVehicleDetails(
@@ -18,67 +23,88 @@ export async function fetchUkVehicleDetails(
 
   const apiKey =
     process.env.EXPO_PUBLIC_RAPIDAPI_KEY ||
-    process.env.EXPO_PUBLIC_VEHICLE_DATA_API_KEY;
+    process.env.EXPO_PUBLIC_VEHICLE_DATA_API_KEY ||
+    "";
 
   const apiHost =
-    process.env.EXPO_PUBLIC_RAPIDAPI_HOST ||
-    "uk-vehicle-data1.p.rapidapi.com";
+    process.env.EXPO_PUBLIC_RAPIDAPI_HOST || "uk-vehicle-data1.p.rapidapi.com";
 
   if (!apiKey) {
-    console.warn("RapidAPI key missing in .env configuration.");
+    throw new Error("Vehicle lookup service is temporarily unavailable.");
   }
 
-  const url = `https://${apiHost}/api/datapackage/VehicleData?v=2&api_nullitems=1&auth_companyflag=1&RegistrationData_Vrm=${cleanReg}`;
+  const endpoint = `https://${apiHost.trim()}/cartax.api.v1.Public/GetInitialReport`;
 
   try {
-    const response = await fetch(url, {
-      method: "GET",
+    const response = await fetch(endpoint, {
+      method: "POST",
       headers: {
-        "x-rapidapi-key": (apiKey || "").trim(),
+        "x-rapidapi-key": apiKey.trim(),
         "x-rapidapi-host": apiHost.trim(),
-        "Accept": "application/json",
+        "Content-Type": "application/json",
+        Accept: "application/json",
       },
+      body: JSON.stringify({
+        vrm: cleanReg,
+      }),
     });
 
     if (!response.ok) {
-      throw new Error(`No vehicle found for registration ${cleanReg}. Please check and enter a valid UK registration number.`);
+      const errJson = await response.json().catch(() => null);
+      const message =
+        errJson?.message ||
+        `No vehicle found for registration ${cleanReg}. Please check and try again.`;
+
+      throw new Error(message);
     }
 
     const data = await response.json();
+    const vData = data?.vehicle || data?.initialReport || data?.data || data;
 
-    const dataItems =
-      data?.Response?.DataItems ||
-      data?.DataItems ||
-      data;
-
-    const vData = dataItems?.VehicleRegistration || dataItems?.VehicleData || dataItems;
-
-    if (!vData || (!vData.Make && !vData.make)) {
-      throw new Error(`No vehicle found for registration ${cleanReg}. Please check and enter a valid UK registration number.`);
-    }
-
-    const rawMake = vData.Make || vData.make;
-    const rawModel = vData.Model || vData.model;
+    const rawMake = vData?.make || vData?.Make || vData?.manufacturer;
+    const rawModel = vData?.model || vData?.Model;
 
     if (!rawMake || !rawModel) {
-      throw new Error(`No vehicle found for registration ${cleanReg}. Please check and enter a valid UK registration number.`);
+      throw new Error(`No vehicle details found for registration ${cleanReg}.`);
     }
 
     const rawYear =
-      Number(vData.YearOfManufacture || vData.yearOfManufacture || vData.year) ||
-      new Date().getFullYear();
+      Number(
+        vData?.year || vData?.yearOfManufacture || vData?.registered?.slice(-4),
+      ) || new Date().getFullYear();
 
-    const rawFuel = String(vData.FuelType || vData.fuelType || "petrol").toLowerCase();
+    const rawFuel = String(
+      vData?.fuel || vData?.fuelType || "petrol",
+    ).toLowerCase();
+
     const fuelType: "petrol" | "diesel" | "hybrid" | "electric" =
       rawFuel.includes("diesel")
         ? "diesel"
         : rawFuel.includes("hybrid")
-        ? "hybrid"
-        : rawFuel.includes("electric") || rawFuel.includes("ev")
-        ? "electric"
-        : "petrol";
+          ? "hybrid"
+          : rawFuel.includes("electric") || rawFuel.includes("ev")
+            ? "electric"
+            : "petrol";
 
-    const rawColour = vData.Colour || vData.colour || vData.color || "White";
+    const rawColour = vData?.colour || vData?.color || "White";
+
+    // Senior's Web Logic: Extract engine capacity & MOT expiry
+    const rawEngine =
+      vData?.engineCapacity ||
+      vData?.engineCapacityCc ||
+      vData?.EngineCapacityCc ||
+      vData?.cylinderCapacity ||
+      vData?.engine_size ||
+      null;
+    const engineCapacityCc = rawEngine ? Number(rawEngine) : null;
+
+    const rawMot =
+      vData?.motExpiryDate ||
+      vData?.motExpiry ||
+      vData?.MotExpiryDate ||
+      vData?.mot_expiry ||
+      null;
+    const motExpiry = rawMot ? String(rawMot) : null;
 
     return {
       make: String(rawMake).trim(),
@@ -87,11 +113,16 @@ export async function fetchUkVehicleDetails(
       fuelType,
       colour: String(rawColour).trim(),
       registration: cleanReg,
+      engineSize: vData?.engine_size || undefined,
+      engineCapacityCc: Number.isFinite(engineCapacityCc)
+        ? engineCapacityCc
+        : null,
+      motExpiry,
     };
-  } catch (err) {
-    if (err instanceof Error && err.message.includes("No vehicle found")) {
-      throw err;
-    }
-    throw new Error(`No vehicle found for registration ${cleanReg}. Please check and enter a valid UK registration number.`);
+  } catch (err: any) {
+    throw new Error(
+      err?.message ||
+        "Could not verify vehicle. Check your connection and try again.",
+    );
   }
 }

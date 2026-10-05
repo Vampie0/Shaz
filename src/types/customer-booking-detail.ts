@@ -8,6 +8,7 @@ export type CustomerBookingDetail = {
   carMake: string;
   carModel: string;
   registration: string | null;
+  vehicleYear: number | null;
 
   addressLine1: string;
   addressLine2: string | null;
@@ -21,7 +22,9 @@ export type CustomerBookingDetail = {
   status: string;
 
   quotedPrice: number | null;
+  oilProductName: string | null;
+  oilViscosityGrade: string | null;
+  oilFitmentStatus: string | null;
   cancellationReason: string | null;
   createdAt: string;
 };
-

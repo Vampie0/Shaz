@@ -1,9 +1,8 @@
-import { router } from "expo-router";
+// File: src/app/(customer)/buy-cars.tsx
+
 import { Ionicons } from "@expo/vector-icons";
-import {
-  useMemo,
-  useState,
-} from "react";
+import { router } from "expo-router";
+import { useMemo, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -18,20 +17,11 @@ import {
 import CustomerTopBar from "@/components/customer/CustomerTopBar";
 import MarketplaceCarCard from "@/components/customer/MarketplaceCarCard";
 import ScreenContainer from "@/components/ui/ScreenContainer";
-import {
-  fontSize,
-  fontWeight,
-  radius,
-  spacing,
-} from "@/constants/theme";
+import { fontSize, fontWeight, radius, spacing } from "@/constants/theme";
 import { useMarketplaceCars } from "@/features/customer/use-marketplace-cars";
 import { useAppTheme } from "@/hooks/use-app-theme";
 
-type SortOption =
-  | "newest"
-  | "price_low"
-  | "price_high"
-  | "mileage_low";
+type SortOption = "newest" | "price_low" | "price_high" | "mileage_low";
 
 type SearchFilters = {
   makeModel: string;
@@ -48,14 +38,9 @@ type InlineSelectProps = {
   label: string;
   valueLabel: string;
   expanded: boolean;
-  options: Array<{
-    label: string;
-    value: string;
-  }>;
+  options: Array<{ label: string; value: string }>;
   onToggle: () => void;
-  onSelect: (
-    value: string,
-  ) => void;
+  onSelect: (value: string) => void;
 };
 
 const emptyFilters: SearchFilters = {
@@ -69,82 +54,50 @@ const emptyFilters: SearchFilters = {
   sortBy: "newest",
 };
 
-function normalized(
-  value: string | null | undefined,
-) {
-  return (
-    value
-      ?.trim()
-      .toLowerCase() ??
-    ""
-  );
+const POPULAR_MAKES = [
+  "BMW",
+  "Audi",
+  "Mercedes-Benz",
+  "Volkswagen",
+  "Ford",
+  "Honda",
+  "Toyota",
+];
+
+function normalized(value: string | null | undefined) {
+  return value?.trim().toLowerCase() ?? "";
 }
 
-function parseNumber(
-  value: string,
-) {
-  if (!value.trim()) {
-    return null;
-  }
-
-  const parsed =
-    Number(
-      value.replace(
-        /[^0-9.]/g,
-        "",
-      ),
-    );
-
-  return Number.isFinite(parsed)
-    ? parsed
-    : null;
+function parseNumber(value: string) {
+  if (!value.trim()) return null;
+  const parsed = Number(value.replace(/[^0-9.]/g, ""));
+  return Number.isFinite(parsed) ? parsed : null;
 }
 
-function titleCase(
-  value: string,
-) {
+function titleCase(value: string) {
   return value
     .replaceAll("_", " ")
-    .replace(
-      /\b\w/g,
-      (letter) =>
-        letter.toUpperCase(),
-    );
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
-function sortLabel(
-  value: SortOption,
-) {
+function sortLabel(value: SortOption) {
   switch (value) {
     case "price_low":
       return "Sort by: Price (Low to High)";
-
     case "price_high":
       return "Sort by: Price (High to Low)";
-
     case "mileage_low":
       return "Sort by: Lowest Mileage";
-
     case "newest":
     default:
       return "Sort by: Newest";
   }
 }
 
-function newestTime(
-  publishedAt: string | null,
-  createdAt: string,
-) {
-  const value =
-    publishedAt ??
-    createdAt;
-
-  const time =
-    new Date(value).getTime();
-
-  return Number.isFinite(time)
-    ? time
-    : 0;
+function newestTime(publishedAt: string | null, createdAt: string) {
+  const value = publishedAt ?? createdAt;
+  const time = new Date(value).getTime();
+  return Number.isFinite(time) ? time : 0;
 }
 
 function InlineSelect({
@@ -155,8 +108,7 @@ function InlineSelect({
   onToggle,
   onSelect,
 }: InlineSelectProps) {
-  const theme =
-    useAppTheme();
+  const theme = useAppTheme();
 
   return (
     <View style={styles.selectWrap}>
@@ -165,96 +117,42 @@ function InlineSelect({
         onPress={onToggle}
         style={({ pressed }) => [
           styles.selectRow,
-          {
-            borderBottomColor:
-              theme.border,
-          },
-          pressed &&
-            styles.pressed,
+          { borderBottomColor: theme.border },
+          pressed && styles.pressed,
         ]}
       >
         <View style={styles.selectCopy}>
-          <Text
-            style={[
-              styles.selectLabel,
-              {
-                color:
-                  theme.textMuted,
-              },
-            ]}
-          >
+          <Text style={[styles.selectLabel, { color: theme.textMuted }]}>
             {label}
           </Text>
-
-          <Text
-            style={[
-              styles.selectValue,
-              {
-                color:
-                  theme.text,
-              },
-            ]}
-          >
+          <Text style={[styles.selectValue, { color: theme.text }]}>
             {valueLabel}
           </Text>
         </View>
-
         <Ionicons
-          name={
-            expanded
-              ? "chevron-up"
-              : "chevron-down"
-          }
+          name={expanded ? "chevron-up" : "chevron-down"}
           size={18}
-          color={
-            theme.textMuted
-          }
+          color={theme.textMuted}
         />
       </Pressable>
 
       {expanded ? (
-        <View
-          style={[
-            styles.optionList,
-            {
-              borderBottomColor:
-                theme.border,
-            },
-          ]}
-        >
-          {options.map(
-            (option) => (
-              <Pressable
-                key={
-                  option.value ||
-                  "__any__"
-                }
-                accessibilityRole="button"
-                onPress={() =>
-                  onSelect(
-                    option.value,
-                  )
-                }
-                style={({ pressed }) => [
-                  styles.optionRow,
-                  pressed &&
-                    styles.pressed,
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.optionText,
-                    {
-                      color:
-                        theme.textSecondary,
-                    },
-                  ]}
-                >
-                  {option.label}
-                </Text>
-              </Pressable>
-            ),
-          )}
+        <View style={[styles.optionList, { borderBottomColor: theme.border }]}>
+          {options.map((option) => (
+            <Pressable
+              key={option.value || "__any__"}
+              accessibilityRole="button"
+              onPress={() => onSelect(option.value)}
+              style={({ pressed }) => [
+                styles.optionRow,
+                pressed && styles.pressed,
+              ]}
+            >
+              <Text style={[styles.optionText, { color: theme.textSecondary }]}>
+                {option.label}
+              </Text>
+            </Pressable>
+          ))}
         </View>
       ) : null}
     </View>
@@ -262,270 +160,93 @@ function InlineSelect({
 }
 
 export default function CustomerBuyCarsScreen() {
-  const theme =
-    useAppTheme();
+  const theme = useAppTheme();
+  const query = useMarketplaceCars();
 
-  const query =
-    useMarketplaceCars();
+  const [draftFilters, setDraftFilters] = useState<SearchFilters>(emptyFilters);
+  const [appliedFilters, setAppliedFilters] =
+    useState<SearchFilters>(emptyFilters);
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [openSelect, setOpenSelect] = useState<
+    "fuel" | "transmission" | "sort" | null
+  >(null);
 
-  const [
-    draftFilters,
-    setDraftFilters,
-  ] =
-    useState<SearchFilters>(
-      emptyFilters,
-    );
-
-  const [
-    appliedFilters,
-    setAppliedFilters,
-  ] =
-    useState<SearchFilters>(
-      emptyFilters,
-    );
-
-  const [
-    showAdvanced,
-    setShowAdvanced,
-  ] = useState(false);
-
-  const [
-    openSelect,
-    setOpenSelect,
-  ] =
-    useState<
-      | "fuel"
-      | "transmission"
-      | "sort"
-      | null
-    >(null);
-
-  const allCars =
-    query.data ?? [];
+  const allCars = query.data ?? [];
 
   const fuelOptions = [
-    {
-      label: "Any Fuel Type",
-      value: "",
-    },
-    {
-      label: "Petrol",
-      value: "petrol",
-    },
-    {
-      label: "Diesel",
-      value: "diesel",
-    },
-    {
-      label: "Hybrid",
-      value: "hybrid",
-    },
-    {
-      label: "Electric",
-      value: "electric",
-    },
+    { label: "Any Fuel Type", value: "" },
+    { label: "Petrol", value: "petrol" },
+    { label: "Diesel", value: "diesel" },
+    { label: "Hybrid", value: "hybrid" },
+    { label: "Electric", value: "electric" },
   ];
 
   const transmissionOptions = [
-    {
-      label: "Any Transmission",
-      value: "",
-    },
-    {
-      label: "Manual",
-      value: "manual",
-    },
-    {
-      label: "Automatic",
-      value: "automatic",
-    },
+    { label: "Any Transmission", value: "" },
+    { label: "Manual", value: "manual" },
+    { label: "Automatic", value: "automatic" },
   ];
 
   const sortOptions = [
-    {
-      label: "Sort by: Newest",
-      value: "newest",
-    },
-    {
-      label: "Sort by: Price (Low to High)",
-      value: "price_low",
-    },
-    {
-      label: "Sort by: Price (High to Low)",
-      value: "price_high",
-    },
-    {
-      label: "Sort by: Lowest Mileage",
-      value: "mileage_low",
-    },
+    { label: "Sort by: Newest", value: "newest" },
+    { label: "Sort by: Price (Low to High)", value: "price_low" },
+    { label: "Sort by: Price (High to Low)", value: "price_high" },
+    { label: "Sort by: Lowest Mileage", value: "mileage_low" },
   ];
 
-  const results =
-    useMemo(() => {
-      const makeModel =
-        normalized(
-          appliedFilters.makeModel,
-        );
+  const results = useMemo(() => {
+    const makeModel = normalized(appliedFilters.makeModel);
+    const location = normalized(appliedFilters.location);
+    const minPrice = parseNumber(appliedFilters.minPrice);
+    const maxPrice = parseNumber(appliedFilters.maxPrice);
+    const maxMileage = parseNumber(appliedFilters.maxMileage);
 
-      const location =
-        normalized(
-          appliedFilters.location,
-        );
-
-      const minPrice =
-        parseNumber(
-          appliedFilters.minPrice,
-        );
-
-      const maxPrice =
-        parseNumber(
-          appliedFilters.maxPrice,
-        );
-
-      const maxMileage =
-        parseNumber(
-          appliedFilters.maxMileage,
-        );
-
-      const filtered =
-        allCars.filter(
-          (car) => {
-            const carName =
-              normalized(
-                [
-                  car.make,
-                  car.model,
-                  car.variant,
-                ]
-                  .filter(Boolean)
-                  .join(" "),
-              );
-
-            const carLocation =
-              normalized(
-                [
-                  car.city,
-                  car.postcode,
-                  car.registrationCity,
-                ]
-                  .filter(Boolean)
-                  .join(" "),
-              );
-
-            if (
-              makeModel &&
-              !carName.includes(
-                makeModel,
-              )
-            ) {
-              return false;
-            }
-
-            if (
-              location &&
-              !carLocation.includes(
-                location,
-              )
-            ) {
-              return false;
-            }
-
-            if (
-              minPrice !== null &&
-              car.price <
-                minPrice
-            ) {
-              return false;
-            }
-
-            if (
-              maxPrice !== null &&
-              car.price >
-                maxPrice
-            ) {
-              return false;
-            }
-
-            if (
-              appliedFilters.fuelType &&
-              normalized(
-                car.fuelType,
-              ) !==
-                normalized(
-                  appliedFilters.fuelType,
-                )
-            ) {
-              return false;
-            }
-
-            if (
-              appliedFilters.transmission &&
-              normalized(
-                car.transmission,
-              ) !==
-                normalized(
-                  appliedFilters.transmission,
-                )
-            ) {
-              return false;
-            }
-
-            if (
-              maxMileage !== null &&
-              car.mileage >
-                maxMileage
-            ) {
-              return false;
-            }
-
-            return true;
-          },
-        );
-
-      return [
-        ...filtered,
-      ].sort(
-        (a, b) => {
-          switch (
-            appliedFilters.sortBy
-          ) {
-            case "price_low":
-              return (
-                a.price -
-                b.price
-              );
-
-            case "price_high":
-              return (
-                b.price -
-                a.price
-              );
-
-            case "mileage_low":
-              return (
-                a.mileage -
-                b.mileage
-              );
-
-            case "newest":
-            default:
-              return (
-                newestTime(
-                  b.publishedAt,
-                  b.createdAt,
-                ) -
-                newestTime(
-                  a.publishedAt,
-                  a.createdAt,
-                )
-              );
-          }
-        },
+    const filtered = allCars.filter((car) => {
+      const carName = normalized(
+        [car.make, car.model, car.variant].filter(Boolean).join(" "),
       );
-    }, [
-      allCars,
-      appliedFilters,
-    ]);
+      const carLocation = normalized(
+        [car.city, car.postcode, car.registrationCity]
+          .filter(Boolean)
+          .join(" "),
+      );
+
+      if (makeModel && !carName.includes(makeModel)) return false;
+      if (location && !carLocation.includes(location)) return false;
+      if (minPrice !== null && car.price < minPrice) return false;
+      if (maxPrice !== null && car.price > maxPrice) return false;
+      if (
+        appliedFilters.fuelType &&
+        normalized(car.fuelType) !== normalized(appliedFilters.fuelType)
+      )
+        return false;
+      if (
+        appliedFilters.transmission &&
+        normalized(car.transmission) !== normalized(appliedFilters.transmission)
+      )
+        return false;
+      if (maxMileage !== null && car.mileage > maxMileage) return false;
+
+      return true;
+    });
+
+    return [...filtered].sort((a, b) => {
+      switch (appliedFilters.sortBy) {
+        case "price_low":
+          return a.price - b.price;
+        case "price_high":
+          return b.price - a.price;
+        case "mileage_low":
+          return a.mileage - b.mileage;
+        case "newest":
+        default:
+          return (
+            newestTime(b.publishedAt, b.createdAt) -
+            newestTime(a.publishedAt, a.createdAt)
+          );
+      }
+    });
+  }, [allCars, appliedFilters]);
 
   const hasFilters =
     appliedFilters.makeModel ||
@@ -535,407 +256,192 @@ export default function CustomerBuyCarsScreen() {
     appliedFilters.fuelType ||
     appliedFilters.transmission ||
     appliedFilters.maxMileage ||
-    appliedFilters.sortBy !==
-      "newest";
+    appliedFilters.sortBy !== "newest";
 
-  const updateDraft = <
-    K extends keyof SearchFilters,
-  >(
+  const updateDraft = <K extends keyof SearchFilters>(
     key: K,
     value: SearchFilters[K],
   ) => {
-    setDraftFilters(
-      (current) => ({
-        ...current,
-        [key]: value,
-      }),
-    );
+    setDraftFilters((current) => ({ ...current, [key]: value }));
   };
 
   const applySearch = () => {
-    setAppliedFilters({
-      ...draftFilters,
-    });
+    setAppliedFilters({ ...draftFilters });
   };
 
   const clearSearch = () => {
-    setDraftFilters({
-      ...emptyFilters,
-    });
-
-    setAppliedFilters({
-      ...emptyFilters,
-    });
-
+    setDraftFilters({ ...emptyFilters });
+    setAppliedFilters({ ...emptyFilters });
     setOpenSelect(null);
   };
 
+  const applyPopularMake = (make: string) => {
+    const newFilters = { ...emptyFilters, makeModel: make };
+    setDraftFilters(newFilters);
+    setAppliedFilters(newFilters);
+  };
+
   return (
-    <ScreenContainer
-      contentStyle={
-        styles.screen
-      }
-    >
-      <CustomerTopBar
-        title="Buy Cars"
-        showBack
-      />
+    <ScreenContainer contentStyle={styles.screen}>
+      <CustomerTopBar title="Buy Cars" showMenu />
 
       <FlatList
         data={results}
-        keyExtractor={(item) =>
-          item.id
-        }
+        keyExtractor={(item) => item.id}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
-        contentContainerStyle={
-          styles.content
-        }
+        contentContainerStyle={styles.content}
         refreshControl={
           <RefreshControl
-            refreshing={
-              query.isRefetching
-            }
-            onRefresh={() =>
-              void query.refetch()
-            }
-            tintColor={
-              theme.primary
-            }
-            colors={[
-              theme.primary,
-            ]}
+            refreshing={query.isRefetching}
+            onRefresh={() => void query.refetch()}
+            tintColor={theme.primary}
+            colors={[theme.primary]}
           />
         }
         ListHeaderComponent={
           <View style={styles.header}>
             <View style={styles.hero}>
-              <Text
-                style={[
-                  styles.eyebrow,
-                  {
-                    color:
-                      theme.primary,
-                  },
-                ]}
-              >
+              <Text style={[styles.eyebrow, { color: theme.primary }]}>
                 USED CARS
               </Text>
-
-              <Text
-                style={[
-                  styles.title,
-                  {
-                    color:
-                      theme.text,
-                  },
-                ]}
-              >
+              <Text style={[styles.title, { color: theme.text }]}>
                 Find the right car for your road ahead.
               </Text>
-
-              <Text
-                style={[
-                  styles.subtitle,
-                  {
-                    color:
-                      theme.textSecondary,
-                  },
-                ]}
-              >
+              <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
                 Browse active listings from sellers across the UK.
               </Text>
             </View>
 
             <View
-              style={[
-                styles.sectionDivider,
-                {
-                  backgroundColor:
-                    theme.border,
-                },
-              ]}
+              style={[styles.sectionDivider, { backgroundColor: theme.border }]}
             />
 
+            {/* SEARCH FILTERS */}
             <View style={styles.searchSection}>
               <View style={styles.field}>
-                <Text
-                  style={[
-                    styles.fieldLabel,
-                    {
-                      color:
-                        theme.textMuted,
-                    },
-                  ]}
-                >
+                <Text style={[styles.fieldLabel, { color: theme.textMuted }]}>
                   MAKE OR MODEL
                 </Text>
-
                 <View
                   style={[
                     styles.inputLine,
-                    {
-                      borderBottomColor:
-                        theme.border,
-                    },
+                    { borderBottomColor: theme.border },
                   ]}
                 >
                   <Ionicons
                     name="car-outline"
                     size={19}
-                    color={
-                      theme.textMuted
-                    }
+                    color={theme.textMuted}
                   />
-
                   <TextInput
-                    value={
-                      draftFilters.makeModel
-                    }
-                    onChangeText={(
-                      value,
-                    ) =>
-                      updateDraft(
-                        "makeModel",
-                        value,
-                      )
-                    }
+                    value={draftFilters.makeModel}
+                    onChangeText={(value) => updateDraft("makeModel", value)}
                     placeholder="e.g. BMW"
-                    placeholderTextColor={
-                      theme.textMuted
-                    }
+                    placeholderTextColor={theme.textMuted}
                     returnKeyType="search"
-                    onSubmitEditing={
-                      applySearch
-                    }
-                    style={[
-                      styles.input,
-                      {
-                        color:
-                          theme.text,
-                      },
-                    ]}
+                    onSubmitEditing={applySearch}
+                    style={[styles.input, { color: theme.text }]}
                   />
                 </View>
               </View>
 
               <View style={styles.field}>
-                <Text
-                  style={[
-                    styles.fieldLabel,
-                    {
-                      color:
-                        theme.textMuted,
-                    },
-                  ]}
-                >
+                <Text style={[styles.fieldLabel, { color: theme.textMuted }]}>
                   LOCATION
                 </Text>
-
                 <View
                   style={[
                     styles.inputLine,
-                    {
-                      borderBottomColor:
-                        theme.border,
-                    },
+                    { borderBottomColor: theme.border },
                   ]}
                 >
                   <Ionicons
                     name="location-outline"
                     size={19}
-                    color={
-                      theme.textMuted
-                    }
+                    color={theme.textMuted}
                   />
-
                   <TextInput
-                    value={
-                      draftFilters.location
-                    }
-                    onChangeText={(
-                      value,
-                    ) =>
-                      updateDraft(
-                        "location",
-                        value,
-                      )
-                    }
+                    value={draftFilters.location}
+                    onChangeText={(value) => updateDraft("location", value)}
                     placeholder="Postcode or city"
-                    placeholderTextColor={
-                      theme.textMuted
-                    }
+                    placeholderTextColor={theme.textMuted}
                     returnKeyType="search"
-                    onSubmitEditing={
-                      applySearch
-                    }
-                    style={[
-                      styles.input,
-                      {
-                        color:
-                          theme.text,
-                      },
-                    ]}
+                    onSubmitEditing={applySearch}
+                    style={[styles.input, { color: theme.text }]}
                   />
                 </View>
               </View>
 
               <View style={styles.priceRow}>
                 <View style={styles.priceField}>
-                  <Text
-                    style={[
-                      styles.fieldLabel,
-                      {
-                        color:
-                          theme.textMuted,
-                      },
-                    ]}
-                  >
+                  <Text style={[styles.fieldLabel, { color: theme.textMuted }]}>
                     MIN PRICE
                   </Text>
-
                   <View
                     style={[
                       styles.inputLine,
-                      {
-                        borderBottomColor:
-                          theme.border,
-                      },
+                      { borderBottomColor: theme.border },
                     ]}
                   >
-                    <Text
-                      style={[
-                        styles.currency,
-                        {
-                          color:
-                            theme.textMuted,
-                        },
-                      ]}
-                    >
+                    <Text style={[styles.currency, { color: theme.textMuted }]}>
                       £
                     </Text>
-
                     <TextInput
-                      value={
-                        draftFilters.minPrice
-                      }
-                      onChangeText={(
-                        value,
-                      ) =>
-                        updateDraft(
-                          "minPrice",
-                          value,
-                        )
-                      }
+                      value={draftFilters.minPrice}
+                      onChangeText={(value) => updateDraft("minPrice", value)}
                       placeholder="No min"
-                      placeholderTextColor={
-                        theme.textMuted
-                      }
+                      placeholderTextColor={theme.textMuted}
                       keyboardType="numeric"
-                      style={[
-                        styles.input,
-                        {
-                          color:
-                            theme.text,
-                        },
-                      ]}
+                      style={[styles.input, { color: theme.text }]}
                     />
                   </View>
                 </View>
 
                 <View style={styles.priceField}>
-                  <Text
-                    style={[
-                      styles.fieldLabel,
-                      {
-                        color:
-                          theme.textMuted,
-                      },
-                    ]}
-                  >
+                  <Text style={[styles.fieldLabel, { color: theme.textMuted }]}>
                     MAX PRICE
                   </Text>
-
                   <View
                     style={[
                       styles.inputLine,
-                      {
-                        borderBottomColor:
-                          theme.border,
-                      },
+                      { borderBottomColor: theme.border },
                     ]}
                   >
-                    <Text
-                      style={[
-                        styles.currency,
-                        {
-                          color:
-                            theme.textMuted,
-                        },
-                      ]}
-                    >
+                    <Text style={[styles.currency, { color: theme.textMuted }]}>
                       £
                     </Text>
-
                     <TextInput
-                      value={
-                        draftFilters.maxPrice
-                      }
-                      onChangeText={(
-                        value,
-                      ) =>
-                        updateDraft(
-                          "maxPrice",
-                          value,
-                        )
-                      }
+                      value={draftFilters.maxPrice}
+                      onChangeText={(value) => updateDraft("maxPrice", value)}
                       placeholder="No max"
-                      placeholderTextColor={
-                        theme.textMuted
-                      }
+                      placeholderTextColor={theme.textMuted}
                       keyboardType="numeric"
-                      style={[
-                        styles.input,
-                        {
-                          color:
-                            theme.text,
-                        },
-                      ]}
+                      style={[styles.input, { color: theme.text }]}
                     />
                   </View>
                 </View>
               </View>
 
+              {/* ADVANCED FILTERS TOGGLE */}
               <Pressable
                 accessibilityRole="button"
-                onPress={() =>
-                  setShowAdvanced(
-                    (value) =>
-                      !value,
-                  )
-                }
+                onPress={() => setShowAdvanced((v) => !v)}
                 style={({ pressed }) => [
                   styles.advancedToggle,
-                  pressed &&
-                    styles.pressed,
+                  pressed && styles.pressed,
                 ]}
               >
                 <View style={styles.advancedLeft}>
                   <Ionicons
                     name="options-outline"
-                    size={20}
-                    color={
-                      theme.textSecondary
-                    }
+                    size={18}
+                    color={theme.textSecondary}
                   />
-
                   <Text
                     style={[
                       styles.advancedText,
-                      {
-                        color:
-                          theme.textSecondary,
-                      },
+                      { color: theme.textSecondary },
                     ]}
                   >
                     {showAdvanced
@@ -943,17 +449,10 @@ export default function CustomerBuyCarsScreen() {
                       : "Show Advanced Filters"}
                   </Text>
                 </View>
-
                 <Ionicons
-                  name={
-                    showAdvanced
-                      ? "chevron-up"
-                      : "chevron-down"
-                  }
-                  size={18}
-                  color={
-                    theme.textMuted
-                  }
+                  name={showAdvanced ? "chevron-up" : "chevron-down"}
+                  size={16}
+                  color={theme.textMuted}
                 />
               </Pressable>
 
@@ -963,37 +462,17 @@ export default function CustomerBuyCarsScreen() {
                     label="FUEL TYPE"
                     valueLabel={
                       draftFilters.fuelType
-                        ? titleCase(
-                            draftFilters.fuelType,
-                          )
+                        ? titleCase(draftFilters.fuelType)
                         : "Any Fuel Type"
                     }
-                    expanded={
-                      openSelect ===
-                      "fuel"
-                    }
-                    options={
-                      fuelOptions
-                    }
+                    expanded={openSelect === "fuel"}
+                    options={fuelOptions}
                     onToggle={() =>
-                      setOpenSelect(
-                        (current) =>
-                          current ===
-                          "fuel"
-                            ? null
-                            : "fuel",
-                      )
+                      setOpenSelect((c) => (c === "fuel" ? null : "fuel"))
                     }
-                    onSelect={(
-                      value,
-                    ) => {
-                      updateDraft(
-                        "fuelType",
-                        value,
-                      );
-                      setOpenSelect(
-                        null,
-                      );
+                    onSelect={(value) => {
+                      updateDraft("fuelType", value);
+                      setOpenSelect(null);
                     }}
                   />
 
@@ -1001,211 +480,101 @@ export default function CustomerBuyCarsScreen() {
                     label="TRANSMISSION"
                     valueLabel={
                       draftFilters.transmission
-                        ? titleCase(
-                            draftFilters.transmission,
-                          )
+                        ? titleCase(draftFilters.transmission)
                         : "Any Transmission"
                     }
-                    expanded={
-                      openSelect ===
-                      "transmission"
-                    }
-                    options={
-                      transmissionOptions
-                    }
+                    expanded={openSelect === "transmission"}
+                    options={transmissionOptions}
                     onToggle={() =>
-                      setOpenSelect(
-                        (current) =>
-                          current ===
-                          "transmission"
-                            ? null
-                            : "transmission",
+                      setOpenSelect((c) =>
+                        c === "transmission" ? null : "transmission",
                       )
                     }
-                    onSelect={(
-                      value,
-                    ) => {
-                      updateDraft(
-                        "transmission",
-                        value,
-                      );
-                      setOpenSelect(
-                        null,
-                      );
+                    onSelect={(value) => {
+                      updateDraft("transmission", value);
+                      setOpenSelect(null);
                     }}
                   />
 
                   <View style={styles.field}>
                     <Text
-                      style={[
-                        styles.fieldLabel,
-                        {
-                          color:
-                            theme.textMuted,
-                        },
-                      ]}
+                      style={[styles.fieldLabel, { color: theme.textMuted }]}
                     >
                       MAX MILEAGE
                     </Text>
-
                     <View
                       style={[
                         styles.inputLine,
-                        {
-                          borderBottomColor:
-                            theme.border,
-                        },
+                        { borderBottomColor: theme.border },
                       ]}
                     >
                       <Ionicons
                         name="speedometer-outline"
                         size={19}
-                        color={
-                          theme.textMuted
-                        }
+                        color={theme.textMuted}
                       />
-
                       <TextInput
-                        value={
-                          draftFilters.maxMileage
-                        }
-                        onChangeText={(
-                          value,
-                        ) =>
-                          updateDraft(
-                            "maxMileage",
-                            value,
-                          )
+                        value={draftFilters.maxMileage}
+                        onChangeText={(value) =>
+                          updateDraft("maxMileage", value)
                         }
                         placeholder="No max mileage"
-                        placeholderTextColor={
-                          theme.textMuted
-                        }
+                        placeholderTextColor={theme.textMuted}
                         keyboardType="numeric"
-                        style={[
-                          styles.input,
-                          {
-                            color:
-                              theme.text,
-                          },
-                        ]}
+                        style={[styles.input, { color: theme.text }]}
                       />
                     </View>
                   </View>
 
                   <InlineSelect
                     label="SORT BY"
-                    valueLabel={
-                      sortLabel(
-                        draftFilters.sortBy,
-                      )
-                    }
-                    expanded={
-                      openSelect ===
-                      "sort"
-                    }
-                    options={
-                      sortOptions
-                    }
+                    valueLabel={sortLabel(draftFilters.sortBy)}
+                    expanded={openSelect === "sort"}
+                    options={sortOptions}
                     onToggle={() =>
-                      setOpenSelect(
-                        (current) =>
-                          current ===
-                          "sort"
-                            ? null
-                            : "sort",
-                      )
+                      setOpenSelect((c) => (c === "sort" ? null : "sort"))
                     }
-                    onSelect={(
-                      value,
-                    ) => {
-                      updateDraft(
-                        "sortBy",
-                        value as SortOption,
-                      );
-                      setOpenSelect(
-                        null,
-                      );
+                    onSelect={(value) => {
+                      updateDraft("sortBy", value as SortOption);
+                      setOpenSelect(null);
                     }}
                   />
                 </View>
               ) : null}
 
+              {/* SEARCH BUTTON */}
               <Pressable
                 accessibilityRole="button"
-                onPress={
-                  applySearch
-                }
+                onPress={applySearch}
                 style={({ pressed }) => [
                   styles.searchButton,
-                  {
-                    backgroundColor:
-                      theme.primary,
-                  },
-                  pressed &&
-                    styles.pressed,
+                  { backgroundColor: theme.primary },
+                  pressed && styles.pressed,
                 ]}
               >
-                <Ionicons
-                  name="search"
-                  size={20}
-                  color="#FFFFFF"
-                />
-
-                <Text style={styles.searchButtonText}>
-                  Search
-                </Text>
+                <Ionicons name="search" size={18} color="#FFFFFF" />
+                <Text style={styles.searchButtonText}>Search</Text>
               </Pressable>
             </View>
 
             <View
-              style={[
-                styles.sectionDivider,
-                {
-                  backgroundColor:
-                    theme.border,
-                },
-              ]}
+              style={[styles.sectionDivider, { backgroundColor: theme.border }]}
             />
 
             <View style={styles.resultsHeader}>
               <Text
-                style={[
-                  styles.resultCount,
-                  {
-                    color:
-                      theme.textSecondary,
-                  },
-                ]}
+                style={[styles.resultCount, { color: theme.textSecondary }]}
               >
-                {results.length}{" "}
-                {results.length === 1
-                  ? "car"
-                  : "cars"}{" "}
-                found
+                {results.length} {results.length === 1 ? "car" : "cars"} found
               </Text>
-
               {hasFilters ? (
                 <Pressable
                   accessibilityRole="button"
-                  onPress={
-                    clearSearch
-                  }
+                  onPress={clearSearch}
                   hitSlop={8}
-                  style={({ pressed }) => [
-                    pressed &&
-                      styles.pressed,
-                  ]}
+                  style={({ pressed }) => [pressed && styles.pressed]}
                 >
-                  <Text
-                    style={[
-                      styles.clearText,
-                      {
-                        color:
-                          theme.primary,
-                      },
-                    ]}
-                  >
+                  <Text style={[styles.clearText, { color: theme.primary }]}>
                     Clear filters
                   </Text>
                 </Pressable>
@@ -1214,20 +583,9 @@ export default function CustomerBuyCarsScreen() {
 
             {query.isLoading ? (
               <View style={styles.loading}>
-                <ActivityIndicator
-                  color={
-                    theme.primary
-                  }
-                />
-
+                <ActivityIndicator color={theme.primary} />
                 <Text
-                  style={[
-                    styles.loadingText,
-                    {
-                      color:
-                        theme.textSecondary,
-                    },
-                  ]}
+                  style={[styles.loadingText, { color: theme.textSecondary }]}
                 >
                   Loading cars…
                 </Text>
@@ -1236,92 +594,114 @@ export default function CustomerBuyCarsScreen() {
 
             {query.isError ? (
               <View style={styles.errorState}>
-                <Text
-                  style={[
-                    styles.errorTitle,
-                    {
-                      color:
-                        theme.text,
-                    },
-                  ]}
-                >
-                  Couldn&apos;t load cars
+                <Text style={[styles.errorTitle, { color: theme.text }]}>
+                  Couldn't load cars
                 </Text>
-
                 <Text
-                  style={[
-                    styles.errorText,
-                    {
-                      color:
-                        theme.textSecondary,
-                    },
-                  ]}
+                  style={[styles.errorText, { color: theme.textSecondary }]}
                 >
-                  {query.error instanceof Error
-                    ? query.error.message
-                    : "Check your connection and pull down to try again."}
+                  Check your connection and pull down to try again.
                 </Text>
               </View>
             ) : null}
           </View>
         }
-        ItemSeparatorComponent={() => (
-          <View
-            style={
-              styles.separator
-            }
-          />
-        )}
+        ItemSeparatorComponent={() => <View style={styles.separator} />}
         renderItem={({ item }) => (
           <MarketplaceCarCard
             car={item}
             onPress={() =>
               router.push({
-                pathname:
-                  "/(customer)/car/[carId]",
-                params: {
-                  carId:
-                    item.id,
-                },
+                pathname: "/(customer)/car/[carId]",
+                params: { carId: item.id },
               })
             }
           />
         )}
         ListEmptyComponent={
-          !query.isLoading &&
-          !query.isError ? (
-            <View style={styles.emptyState}>
+          !query.isLoading && !query.isError ? (
+            <View
+              style={[
+                styles.emptyState,
+                {
+                  backgroundColor: theme.surfaceSecondary,
+                  borderColor: theme.border,
+                },
+              ]}
+            >
               <Ionicons
                 name="search-outline"
-                size={28}
-                color={
-                  theme.textMuted
-                }
+                size={32}
+                color={theme.textMuted}
               />
-
-              <Text
-                style={[
-                  styles.emptyTitle,
-                  {
-                    color:
-                      theme.text,
-                  },
-                ]}
-              >
-                No cars match your search
+              <Text style={[styles.emptyTitle, { color: theme.text }]}>
+                No cars found
+              </Text>
+              <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
+                Try removing a filter or broadening your search.
               </Text>
 
-              <Text
-                style={[
-                  styles.emptyText,
-                  {
-                    color:
-                      theme.textSecondary,
-                  },
-                ]}
-              >
-                Try changing or clearing the filters.
-              </Text>
+              <View style={styles.emptyActions}>
+                <Pressable
+                  onPress={clearSearch}
+                  style={({ pressed }) => [
+                    styles.emptyClearBtn,
+                    {
+                      borderColor: theme.border,
+                      backgroundColor: theme.surface,
+                    },
+                    pressed && styles.pressed,
+                  ]}
+                >
+                  <Text style={[styles.emptyClearText, { color: theme.text }]}>
+                    Clear filters
+                  </Text>
+                </Pressable>
+                <Pressable
+                  onPress={() => router.push("/(customer)/sell-my-car")}
+                  style={({ pressed }) => [
+                    styles.emptySellBtn,
+                    { backgroundColor: theme.action },
+                    pressed && styles.pressed,
+                  ]}
+                >
+                  <Text style={styles.emptySellText}>Sell Your Car</Text>
+                </Pressable>
+              </View>
+
+              {/* SENIOR'S WEB FEATURE: POPULAR MAKES */}
+              <View style={styles.popularMakesSection}>
+                <Text
+                  style={[styles.popularMakesTitle, { color: theme.textMuted }]}
+                >
+                  POPULAR MAKES
+                </Text>
+                <View style={styles.popularMakesGrid}>
+                  {POPULAR_MAKES.map((make) => (
+                    <Pressable
+                      key={make}
+                      onPress={() => applyPopularMake(make)}
+                      style={({ pressed }) => [
+                        styles.popularMakeChip,
+                        {
+                          borderColor: theme.border,
+                          backgroundColor: theme.surface,
+                        },
+                        pressed && {
+                          borderColor: theme.primary,
+                          backgroundColor: theme.primarySoft,
+                        },
+                      ]}
+                    >
+                      <Text
+                        style={[styles.popularMakeText, { color: theme.text }]}
+                      >
+                        {make}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+              </View>
             </View>
           ) : null
         }
@@ -1330,292 +710,191 @@ export default function CustomerBuyCarsScreen() {
   );
 }
 
-const styles =
-  StyleSheet.create({
-    screen: {
-      paddingHorizontal: 0,
-    },
+const styles = StyleSheet.create({
+  screen: { paddingHorizontal: 0 },
+  content: {
+    flexGrow: 1,
+    paddingHorizontal: spacing.xl,
+    paddingBottom: spacing.xxxl,
+  },
+  header: { paddingTop: spacing.xxl },
 
-    content: {
-      flexGrow: 1,
-      paddingHorizontal:
-        spacing.xl,
-      paddingBottom:
-        spacing.xxxl,
-    },
+  hero: { gap: spacing.md },
+  eyebrow: {
+    fontSize: fontSize.xs,
+    fontWeight: fontWeight.bold,
+    letterSpacing: 1.5,
+  },
+  title: {
+    fontSize: 32,
+    lineHeight: 38,
+    fontWeight: fontWeight.bold,
+    letterSpacing: -0.9,
+  },
+  subtitle: { fontSize: fontSize.md, lineHeight: 24 },
 
-    header: {
-      paddingTop:
-        spacing.xxl,
-    },
+  sectionDivider: {
+    height: StyleSheet.hairlineWidth,
+    marginVertical: spacing.xxl,
+  },
 
-    hero: {
-      gap: spacing.md,
-    },
+  searchSection: { gap: spacing.xl },
+  field: { gap: 6 },
+  fieldLabel: { fontSize: 11, fontWeight: fontWeight.bold, letterSpacing: 0.8 },
+  inputLine: {
+    minHeight: 48,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    borderBottomWidth: 1,
+  },
+  input: { flex: 1, paddingVertical: 10, fontSize: fontSize.md },
 
-    eyebrow: {
-      fontSize:
-        fontSize.xs,
-      fontWeight:
-        fontWeight.bold,
-      letterSpacing: 1.5,
-    },
+  priceRow: { flexDirection: "row", gap: spacing.xl },
+  priceField: { flex: 1, gap: 6 },
+  currency: { fontSize: fontSize.md, fontWeight: fontWeight.semibold },
 
-    title: {
-      maxWidth: 560,
-      fontSize: 32,
-      lineHeight: 38,
-      fontWeight:
-        fontWeight.bold,
-      letterSpacing: -0.9,
-    },
+  advancedToggle: {
+    minHeight: 40,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  advancedLeft: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
+  advancedText: { fontSize: fontSize.sm, fontWeight: fontWeight.semibold },
+  advancedFields: { gap: spacing.xl },
 
-    subtitle: {
-      maxWidth: 560,
-      fontSize:
-        fontSize.md,
-      lineHeight: 24,
-    },
+  selectWrap: { gap: spacing.sm },
+  selectRow: {
+    minHeight: 50,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: spacing.md,
+    borderBottomWidth: 1,
+  },
+  selectCopy: { flex: 1, gap: 4 },
+  selectLabel: {
+    fontSize: 11,
+    fontWeight: fontWeight.bold,
+    letterSpacing: 0.8,
+  },
+  selectValue: { fontSize: fontSize.md, fontWeight: fontWeight.semibold },
+  optionList: { borderBottomWidth: 1, paddingBottom: spacing.sm },
+  optionRow: {
+    minHeight: 42,
+    justifyContent: "center",
+    paddingVertical: spacing.sm,
+  },
+  optionText: { fontSize: fontSize.sm },
 
-    sectionDivider: {
-      height:
-        StyleSheet.hairlineWidth,
-      marginVertical:
-        spacing.xxl,
-    },
+  searchButton: {
+    minHeight: 48,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.sm,
+    borderRadius: radius.md,
+    marginTop: spacing.sm,
+  },
+  searchButtonText: {
+    color: "#FFFFFF",
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.bold,
+  },
 
-    searchSection: {
-      gap: spacing.xl,
-    },
+  resultsHeader: {
+    minHeight: 36,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: spacing.md,
+    marginBottom: spacing.lg,
+  },
+  resultCount: { fontSize: fontSize.sm, fontWeight: fontWeight.semibold },
+  clearText: { fontSize: fontSize.sm, fontWeight: fontWeight.bold },
 
-    field: {
-      gap: 6,
-    },
+  loading: {
+    paddingVertical: spacing.xxl,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.md,
+  },
+  loadingText: { fontSize: fontSize.sm },
+  errorState: { paddingVertical: spacing.xxl, gap: spacing.sm },
+  errorTitle: { fontSize: fontSize.lg, fontWeight: fontWeight.bold },
+  errorText: { fontSize: fontSize.sm, lineHeight: 21 },
 
-    fieldLabel: {
-      fontSize: 11,
-      fontWeight:
-        fontWeight.bold,
-      letterSpacing: 0.8,
-    },
+  separator: { height: spacing.lg },
 
-    inputLine: {
-      minHeight: 48,
-      flexDirection: "row",
-      alignItems: "center",
-      gap: spacing.sm,
-      borderBottomWidth: 1,
-    },
+  emptyState: {
+    alignItems: "center",
+    justifyContent: "center",
+    padding: spacing.xl,
+    borderRadius: radius.xl,
+    borderWidth: 1,
+    marginTop: spacing.sm,
+  },
+  emptyTitle: {
+    fontSize: fontSize.lg,
+    fontWeight: fontWeight.bold,
+    marginTop: spacing.sm,
+  },
+  emptyText: {
+    fontSize: fontSize.sm,
+    textAlign: "center",
+    marginTop: spacing.xs,
+    marginBottom: spacing.lg,
+  },
+  emptyActions: {
+    flexDirection: "row",
+    gap: spacing.sm,
+    marginBottom: spacing.xl,
+  },
+  emptyClearBtn: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: radius.md,
+    borderWidth: 1,
+  },
+  emptyClearText: { fontSize: fontSize.sm, fontWeight: fontWeight.bold },
+  emptySellBtn: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: radius.md,
+  },
+  emptySellText: {
+    color: "#FFF",
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.bold,
+  },
 
-    input: {
-      flex: 1,
-      paddingVertical: 10,
-      fontSize:
-        fontSize.md,
-    },
+  popularMakesSection: {
+    width: "100%",
+    alignItems: "center",
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: "rgba(150,150,150,0.2)",
+    paddingTop: spacing.xl,
+  },
+  popularMakesTitle: {
+    fontSize: 10,
+    fontWeight: fontWeight.bold,
+    letterSpacing: 1.2,
+    marginBottom: spacing.md,
+  },
+  popularMakesGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
+    gap: spacing.sm,
+  },
+  popularMakeChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+  },
+  popularMakeText: { fontSize: 12, fontWeight: fontWeight.semibold },
 
-    priceRow: {
-      flexDirection: "row",
-      gap: spacing.xl,
-    },
-
-    priceField: {
-      flex: 1,
-      gap: 6,
-    },
-
-    currency: {
-      fontSize:
-        fontSize.md,
-      fontWeight:
-        fontWeight.semibold,
-    },
-
-    advancedToggle: {
-      minHeight: 44,
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent:
-        "space-between",
-    },
-
-    advancedLeft: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: spacing.sm,
-    },
-
-    advancedText: {
-      fontSize:
-        fontSize.sm,
-      fontWeight:
-        fontWeight.semibold,
-    },
-
-    advancedFields: {
-      gap: spacing.xl,
-    },
-
-    selectWrap: {
-      gap: spacing.sm,
-    },
-
-    selectRow: {
-      minHeight: 54,
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent:
-        "space-between",
-      gap: spacing.md,
-      borderBottomWidth: 1,
-    },
-
-    selectCopy: {
-      flex: 1,
-      gap: 4,
-    },
-
-    selectLabel: {
-      fontSize: 11,
-      fontWeight:
-        fontWeight.bold,
-      letterSpacing: 0.8,
-    },
-
-    selectValue: {
-      fontSize:
-        fontSize.md,
-      fontWeight:
-        fontWeight.semibold,
-    },
-
-    optionList: {
-      borderBottomWidth: 1,
-      paddingBottom:
-        spacing.sm,
-    },
-
-    optionRow: {
-      minHeight: 42,
-      justifyContent:
-        "center",
-      paddingVertical:
-        spacing.sm,
-    },
-
-    optionText: {
-      fontSize:
-        fontSize.sm,
-    },
-
-    searchButton: {
-      minHeight: 50,
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent:
-        "center",
-      gap: spacing.sm,
-      borderRadius:
-        radius.md,
-    },
-
-    searchButtonText: {
-      color: "#FFFFFF",
-      fontSize:
-        fontSize.md,
-      fontWeight:
-        fontWeight.bold,
-    },
-
-    resultsHeader: {
-      minHeight: 36,
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent:
-        "space-between",
-      gap: spacing.md,
-      marginBottom:
-        spacing.lg,
-    },
-
-    resultCount: {
-      fontSize:
-        fontSize.sm,
-      fontWeight:
-        fontWeight.semibold,
-    },
-
-    clearText: {
-      fontSize:
-        fontSize.sm,
-      fontWeight:
-        fontWeight.bold,
-    },
-
-    loading: {
-      paddingVertical:
-        spacing.xxl,
-      alignItems: "center",
-      justifyContent:
-        "center",
-      gap: spacing.md,
-    },
-
-    loadingText: {
-      fontSize:
-        fontSize.sm,
-    },
-
-    errorState: {
-      paddingVertical:
-        spacing.xxl,
-      gap: spacing.sm,
-    },
-
-    errorTitle: {
-      fontSize:
-        fontSize.lg,
-      fontWeight:
-        fontWeight.bold,
-    },
-
-    errorText: {
-      fontSize:
-        fontSize.sm,
-      lineHeight: 21,
-    },
-
-    separator: {
-      height: spacing.lg,
-    },
-
-    emptyState: {
-      minHeight: 220,
-      alignItems: "center",
-      justifyContent:
-        "center",
-      gap: spacing.sm,
-      paddingHorizontal:
-        spacing.xl,
-    },
-
-    emptyTitle: {
-      fontSize:
-        fontSize.lg,
-      fontWeight:
-        fontWeight.bold,
-      textAlign: "center",
-    },
-
-    emptyText: {
-      fontSize:
-        fontSize.sm,
-      lineHeight: 21,
-      textAlign: "center",
-    },
-
-    pressed: {
-      opacity: 0.64,
-    },
-  });
-
+  pressed: { opacity: 0.65 },
+});

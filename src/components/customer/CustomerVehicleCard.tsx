@@ -37,23 +37,19 @@ export default function CustomerVehicleCard({
         {
           backgroundColor: theme.surface,
           borderColor: theme.border,
+          shadowColor: theme.overlay,
         },
       ]}
     >
       <View style={styles.top}>
         <View
-          style={[
-            styles.iconWrap,
-            { backgroundColor: theme.surfaceSecondary },
-          ]}
+          style={[styles.iconWrap, { backgroundColor: theme.surfaceSecondary }]}
         >
           <Ionicons name="car-outline" size={26} color={theme.primary} />
         </View>
 
         <View style={styles.copy}>
-          <Text style={[styles.title, { color: theme.text }]}>
-            {title}
-          </Text>
+          <Text style={[styles.title, { color: theme.text }]}>{title}</Text>
 
           {details ? (
             <Text style={[styles.details, { color: theme.textSecondary }]}>
@@ -74,7 +70,9 @@ export default function CustomerVehicleCard({
           ]}
         >
           <View style={[styles.plateBand, { backgroundColor: theme.primary }]}>
-            <Text style={styles.plateBandText}>UK</Text>
+            <Text style={[styles.plateBandText, { color: theme.navText }]}>
+              UK
+            </Text>
           </View>
 
           <Text style={[styles.plateText, { color: theme.text }]}>
@@ -115,7 +113,11 @@ export default function CustomerVehicleCard({
                   pressed && styles.pressed,
                 ]}
               >
-                <Ionicons name="settings-outline" size={16} color={theme.primary} />
+                <Ionicons
+                  name="settings-outline"
+                  size={16}
+                  color={theme.primary}
+                />
                 <Text style={[styles.actionText, { color: theme.primary }]}>
                   Parts
                 </Text>
@@ -154,7 +156,6 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     gap: spacing.lg,
     elevation: 3,
-    shadowColor: "#000000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 8,
@@ -198,7 +199,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   plateBandText: {
-    color: "#FFFFFF",
     fontSize: 9,
     fontWeight: "800",
   },

@@ -1,7 +1,6 @@
-import {
-  router,
-  useLocalSearchParams,
-} from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import { router, useLocalSearchParams } from "expo-router";
+import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -10,26 +9,18 @@ import {
   Text,
   View,
 } from "react-native";
-import { useState } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import InspectorListState from "@/components/inspector/InspectorListState";
 import JobStatusBadge from "@/components/jobs/JobStatusBadge";
 import JobTypeBadge from "@/components/jobs/JobTypeBadge";
 import JobWorkflow from "@/components/jobs/JobWorkflow";
-import InspectorListState from "@/components/inspector/InspectorListState";
-import AppModal from "@/components/ui/AppModal";
+import AppLoadingOverlay from "@/components/ui/AppLoadingOverlay";
 import ScreenContainer from "@/components/ui/ScreenContainer";
-import {
-  fontWeight,
-} from "@/constants/theme";
+import { fontWeight, radius, spacing } from "@/constants/theme";
 import { useAuth } from "@/features/auth/use-auth";
-import {
-  getWorkerJobAction,
-} from "@/features/jobs/job.actions";
-import {
-  formatJobDate,
-  formatJobTime,
-} from "@/features/jobs/job.helpers";
+import { getWorkerJobAction } from "@/features/jobs/job.actions";
+import { formatJobDate, formatJobTime } from "@/features/jobs/job.helpers";
 import {
   useRunWorkerJobAction,
   useWorkerJobDetail,
@@ -41,39 +32,24 @@ import {
 } from "@/services/location/navigation";
 
 import { toastError } from "@/features/toast/toast-store";
+import { useSingleNavigation } from "@/hooks/use-single-navigation";
+import { fetchInspectionReport } from "@/services/inspection/inspection-report.service";
+import { fetchServiceJobReport } from "@/services/service/service-job-report.service";
+
 export default function JobDetailScreen() {
   const theme = useAppTheme();
-  const insets =
-    useSafeAreaInsets();
-
-  const {
-    id,
-  } =
-    useLocalSearchParams<{
-      id: string;
-    }>();
-
+  const insets = useSafeAreaInsets();
+  const { id } = useLocalSearchParams<{ id: string }>();
   const { profile } = useAuth();
 
-  const [
-    actionError,
-    setActionErrorState,
-  ] =
-    useState<string | null>(
-      null,
-    );
-
-  const setActionError = (
-    next: string | null,
-  ) => {
+  const [actionError, setActionErrorState] = useState<string | null>(null);
+  const [evidence, setEvidence] = useState({ before: 0, after: 0, total: 0 });
+  const [evidenceLoading, setEvidenceLoading] = useState(false);
+  const [hasInitialLoaded, setHasInitialLoaded] = useState(false);
+  const { isBlocked, navigate } = useSingleNavigation();
+  const setActionError = (next: string | null) => {
     setActionErrorState(null);
-
-    if (next) {
-      toastError(
-        next,
-        "Job update failed",
-      );
-    }
+    if (next) toastError(next, "Job update failed");
   };
 
   const {
@@ -81,838 +57,480 @@ export default function JobDetailScreen() {
     isLoading,
     isError,
     refetch,
-  } = useWorkerJobDetail(
-    profile?.id,
-    id,
-  );
+  } = useWorkerJobDetail(profile?.id, id);
 
-  const actionMutation =
-    useRunWorkerJobAction(
-      profile?.id,
-    );
+  const actionMutation = useRunWorkerJobAction(profile?.id);
 
-  if (isLoading) {
-    return (
-      <ScreenContainer>
-        <InspectorListState
-          loading
-          title="Loading job"
-          message="Getting the latest job details."
-        />
-      </ScreenContainer>
-    );
-  }
+  // Mark first load done
+  useEffect(() => {
+    if (job && !isLoading && !hasInitialLoaded) {
+      setHasInitialLoaded(true);
+    }
+  }, [job, isLoading, hasInitialLoaded]);
 
-  if (
-    isError ||
-    !job
-  ) {
-    return (
-      <ScreenContainer>
-        <InspectorListState
-          title="Couldn't load job"
-          message="This assignment could not be loaded."
-          onRetry={() => {
-            void refetch();
-          }}
-        />
-      </ScreenContainer>
-    );
-  }
-
-  const action =
-    getWorkerJobAction(job);
-
-  const runAction =
-    async () => {
-      if (
-        !action ||
-        actionMutation.isPending
-      ) {
-        return;
-      }
-
-      setActionError(null);
-
+  useEffect(() => {
+    async function loadEvidence() {
+      if (!job || isLoading) return;
       try {
-        await actionMutation.mutateAsync({
-          job,
-        });
-
-        await refetch();
-      } catch (error) {
-        setActionError(
-          error instanceof Error
-            ? error.message
-            : "The job status could not be updated.",
-        );
+        setEvidenceLoading(true);
+        if (job.kind === "service") {
+          const res = await fetchServiceJobReport(job.jobId);
+          setEvidence({
+            before: res.images.filter((i) => i.stage === "before").length,
+            after: res.images.filter((i) => i.stage === "after").length,
+            total: res.images.length,
+          });
+        } else {
+          const res = await fetchInspectionReport(job.jobId);
+          setEvidence({ before: 0, after: 0, total: res.images.length });
+        }
+      } catch (err) {
+        console.log("Evidence load error:", err);
+      } finally {
+        setEvidenceLoading(false);
       }
-    };
+    }
+    loadEvidence();
+  }, [job, isLoading]);
 
-  const appointment =
-    formatJobDate(
-      job.scheduledDate,
-    ) +
-    " · " +
-    formatJobTime(
-      job.scheduledTime,
-    );
+  // FIXED: First time sirf job loading dikhega, evidence background me load hoga
+  const isOverlayLoading = isLoading || actionMutation.isPending;
+
+  const overlayMessage = isLoading
+    ? "Loading job details..."
+    : actionMutation.isPending
+      ? "Updating status..."
+      : "Please wait...";
+
+  const action = job ? getWorkerJobAction(job) : null;
+  const isSubmitted = job?.status === "report_submitted";
+  const isFinalised = job?.status === "completed";
+  const isInWorkspace =
+    job?.status === "in_progress" || job?.status === "inspection_in_progress";
+
+  const handleAction = async () => {
+    if (!job) return;
+    if (isBlocked) return;
+    if (isSubmitted || isFinalised) {
+      const route =
+        job.kind === "service" ? "/service/[id]" : "/inspection/[id]";
+      navigate(route, { id: job.assignmentId });
+      return;
+    }
+    if (isInWorkspace) {
+      const route =
+        job.kind === "service" ? "/service/[id]" : "/inspection/[id]";
+      navigate(route, { id: job.assignmentId });
+      return;
+    }
+    if (!action || actionMutation.isPending) return;
+    try {
+      await actionMutation.mutateAsync({ job });
+      await refetch();
+    } catch (error) {
+      setActionError(
+        error instanceof Error ? error.message : "Status update failed.",
+      );
+    }
+  };
 
   return (
-    <>
-      <ScreenContainer>
-        <View style={styles.screen}>
-          <ScrollView
-            contentContainerStyle={[
-              styles.content,
-              {
-                paddingBottom:
-                  122 +
-                  Math.max(
-                    insets.bottom,
-                    8,
-                  ),
-              },
-            ]}
-            showsVerticalScrollIndicator={
-              false
-            }
-          >
-            <View style={styles.topBar}>
-              <Pressable
-                hitSlop={12}
-                onPress={() =>
-                  router.back()
-                }
-                style={({ pressed }) => [
-                  styles.backButton,
-                  pressed && {
-                    opacity: 0.55,
-                  },
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.backText,
-                    {
-                      color:
-                        theme.primary,
-                    },
-                  ]}
+    <View style={[styles.flex, { backgroundColor: theme.background }]}>
+      {isError ? (
+        <ScreenContainer>
+          <InspectorListState
+            title="Error"
+            message="Could not load job details."
+            onRetry={() => void refetch()}
+          />
+        </ScreenContainer>
+      ) : job ? (
+        <>
+          <ScreenContainer contentStyle={styles.noPadding}>
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={[styles.content, { paddingBottom: 160 }]}
+            >
+              <View style={styles.topBar}>
+                <Pressable
+                  onPress={() => router.back()}
+                  style={styles.backLink}
                 >
-                  ‹ Back
-                </Text>
-              </Pressable>
-
-              <JobStatusBadge
-                status={job.status}
-              />
-            </View>
-
-            <View style={styles.heading}>
-              <JobTypeBadge
-                kind={job.kind}
-              />
-
-              <Text
-                style={[
-                  styles.title,
-                  {
-                    color: theme.text,
-                  },
-                ]}
-              >
-                {job.vehicleLabel}
-              </Text>
+                  <Ionicons
+                    name="chevron-back"
+                    size={22}
+                    color={theme.primary}
+                  />
+                  <Text style={[styles.backLabel, { color: theme.primary }]}>
+                    Back
+                  </Text>
+                </Pressable>
+                <JobStatusBadge status={job.status} />
+              </View>
 
               <View
-                style={
-                  styles.registrationRow
-                }
+                style={[
+                  styles.headerCard,
+                  { backgroundColor: theme.surface, borderColor: theme.border },
+                ]}
               >
-                {job.registration ? (
+                <JobTypeBadge kind={job.kind} label={job.jobTypeLabel} />
+                <Text style={[styles.mainTitle, { color: theme.text }]}>
+                  {job.vehicleLabel}
+                </Text>
+                <View style={styles.headerMeta}>
+                  {job.registration ? (
+                    <View
+                      style={[
+                        styles.ukPlate,
+                        {
+                          backgroundColor: theme.surfaceSecondary,
+                          borderColor: theme.border,
+                        },
+                      ]}
+                    >
+                      <View
+                        style={[
+                          styles.plateFlag,
+                          { backgroundColor: theme.primary },
+                        ]}
+                      >
+                        <Text
+                          style={[styles.ukText, { color: theme.primaryText }]}
+                        >
+                          UK
+                        </Text>
+                      </View>
+                      <Text style={[styles.regText, { color: theme.text }]}>
+                        {job.registration.toUpperCase()}
+                      </Text>
+                    </View>
+                  ) : null}
                   <Text
-                    style={[
-                      styles.registration,
-                      {
-                        color:
-                          theme.text,
-                      },
-                    ]}
+                    style={[styles.metaText, { color: theme.textSecondary }]}
                   >
-                    {job.registration.toUpperCase()}
+                    {job.title}
                   </Text>
-                ) : null}
+                </View>
+              </View>
 
-                <Text
-                  style={[
-                    styles.jobKind,
-                    {
-                      color:
-                        theme.textSecondary,
-                    },
-                  ]}
-                >
-                  {job.kind ===
-                  "service"
-                    ? "Mobile service"
-                    : "Vehicle inspection"}
+              <JobWorkflow job={job} />
+
+              <View
+                style={[
+                  styles.card,
+                  { backgroundColor: theme.surface, borderColor: theme.border },
+                ]}
+              >
+                <Text style={[styles.labelSmall, { color: theme.textMuted }]}>
+                  JOB EVIDENCE & WORKSPACE
                 </Text>
-              </View>
-            </View>
-
-            <View
-              style={[
-                styles.sectionDivider,
-                {
-                  backgroundColor:
-                    theme.border,
-                },
-              ]}
-            />
-
-            <JobWorkflow
-              job={job}
-            />
-
-            <View
-              style={[
-                styles.sectionDivider,
-                {
-                  backgroundColor:
-                    theme.border,
-                },
-              ]}
-            />
-
-            <View style={styles.grid}>
-              <InfoBlock
-                eyebrow="APPOINTMENT"
-                value={appointment}
-                secondary={
-                  job.scheduledDate ??
-                  undefined
-                }
-              />
-
-              <InfoBlock
-                eyebrow="CUSTOMER"
-                value={
-                  job.customerName ||
-                  "Not available"
-                }
-                secondary={
-                  job.customerPhone ??
-                  undefined
-                }
-                secondaryPress={
-                  job.customerPhone
-                    ? () => {
-                        void callPhone(
-                          job.customerPhone as string,
-                        );
-                      }
-                    : undefined
-                }
-              />
-            </View>
-
-            <View
-              style={[
-                styles.sectionDivider,
-                {
-                  backgroundColor:
-                    theme.border,
-                },
-              ]}
-            />
-
-            <View style={styles.locationSection}>
-              <Text
-                style={[
-                  styles.sectionEyebrow,
-                  {
-                    color:
-                      theme.textMuted,
-                  },
-                ]}
-              >
-                LOCATION & POSTCODE
-              </Text>
-
-              <Text
-                selectable
-                style={[
-                  styles.location,
-                  {
-                    color: theme.text,
-                  },
-                ]}
-              >
-                {job.address ||
-                  "Location not available"}
-              </Text>
-
-              <View style={styles.locationActions}>
-                {job.address ? (
-                  <Pressable
-                    onPress={() => {
-                      void openExternalNavigation(
-                        job.address,
-                      );
+                <View style={styles.evidenceContent}>
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: 8,
                     }}
-                    style={({ pressed }) => [
-                      styles.textAction,
-                      pressed && {
-                        opacity: 0.55,
-                      },
-                    ]}
                   >
+                    {evidenceLoading && (
+                      <ActivityIndicator size="small" color={theme.textMuted} />
+                    )}
                     <Text
                       style={[
-                        styles.textActionLabel,
+                        styles.evidenceInfo,
                         {
-                          color:
-                            theme.primary,
+                          color: evidenceLoading
+                            ? theme.textMuted
+                            : theme.textSecondary,
                         },
                       ]}
                     >
-                      Open navigation
+                      {evidenceLoading
+                        ? "Loading..."
+                        : job.kind === "service"
+                          ? `Before: ${evidence.before} · After: ${evidence.after}`
+                          : `${evidence.total} Inspection photos uploaded`}
                     </Text>
-                  </Pressable>
-                ) : null}
-
-                {job.customerPhone ? (
+                  </View>
                   <Pressable
-                    onPress={() => {
-                      void callPhone(
-                        job.customerPhone as string,
-                      );
-                    }}
-                    style={({ pressed }) => [
-                      styles.textAction,
-                      pressed && {
-                        opacity: 0.55,
-                      },
-                    ]}
+                    disabled={actionMutation.isPending || isBlocked}
+                    onPress={handleAction}
                   >
-                    <Text
-                      style={[
-                        styles.textActionLabel,
-                        {
-                          color:
-                            theme.primary,
-                        },
-                      ]}
-                    >
-                      Call customer
+                    <Text style={[styles.linkText, { color: theme.primary }]}>
+                      {isSubmitted || isFinalised
+                        ? "View Evidence →"
+                        : "Open Workspace →"}
                     </Text>
                   </Pressable>
-                ) : null}
+                </View>
               </View>
-            </View>
 
-            <View
-              style={[
-                styles.sectionDivider,
-                {
-                  backgroundColor:
-                    theme.border,
-                },
-              ]}
-            />
-
-            <View style={styles.notesSection}>
-              <Text
-                style={[
-                  styles.sectionEyebrow,
-                  {
-                    color:
-                      theme.textMuted,
-                  },
-                ]}
-              >
-                JOB WORKSPACE
-              </Text>
-
-              <Text
-                style={[
-                  styles.notes,
-                  {
-                    color:
-                      theme.textSecondary,
-                  },
-                ]}
-              >
-                {job.kind === "service"
-                  ? "Open the service workspace to manage the field workflow."
-                  : "Open the inspection workspace to complete the vehicle inspection."}
-              </Text>
-
-              <Pressable
-                accessibilityRole="button"
-                onPress={() => {
-                  if (
-                    job.kind ===
-                    "service"
-                  ) {
-                    router.push({
-                      pathname:
-                        "/service/[id]",
-                      params: {
-                        id:
-                          job.assignmentId,
-                      },
-                    });
-
-                    return;
+              <View style={styles.gridRow}>
+                <InfoTile
+                  icon="time-outline"
+                  label="APPOINTMENT TIME"
+                  value={formatJobTime(job.scheduledTime)}
+                  sub={formatJobDate(job.scheduledDate)}
+                />
+                <InfoTile
+                  icon="person-outline"
+                  label="CUSTOMER CONTACT"
+                  value={job.customerName || "Customer"}
+                  sub={job.customerPhone || "Phone unavailable"}
+                  onPress={
+                    job.customerPhone
+                      ? () => callPhone(job.customerPhone!)
+                      : undefined
                   }
+                />
+              </View>
 
-                  router.push({
-                    pathname:
-                      "/inspection/[id]",
-                    params: {
-                      id:
-                        job.assignmentId,
-                    },
-                  });
-                }}
-                style={({ pressed }) => [
-                  styles.textAction,
-                  {
-                    marginTop: 8,
-                    alignSelf:
-                      "flex-start",
-                  },
-                  pressed && {
-                    opacity: 0.55,
-                  },
+              <View
+                style={[
+                  styles.card,
+                  { backgroundColor: theme.surface, borderColor: theme.border },
                 ]}
               >
-                <Text
+                <Text style={[styles.labelSmall, { color: theme.textMuted }]}>
+                  LOCATION & POSTCODE
+                </Text>
+                <Text style={[styles.address, { color: theme.text }]}>
+                  {job.address}
+                </Text>
+                <Pressable
+                  onPress={() => openExternalNavigation(job.address)}
                   style={[
-                    styles.textActionLabel,
+                    styles.navButton,
                     {
-                      color:
-                        theme.primary,
+                      borderColor: theme.border,
+                      backgroundColor: theme.surfaceSecondary,
                     },
                   ]}
                 >
-                  {job.kind === "service"
-                    ? "Open service workspace →"
-                    : "Open inspection workspace →"}
-                </Text>
-              </Pressable>
-            </View>
+                  <Ionicons name="navigate" size={18} color={theme.primary} />
+                  <Text style={[styles.navText, { color: theme.primary }]}>
+                    NAVIGATE (SMART MAPS)
+                  </Text>
+                </Pressable>
+              </View>
 
-
-            {job.notes ? (
-              <>
+              {job.notes && (
                 <View
                   style={[
-                    styles.sectionDivider,
+                    styles.notesCard,
                     {
-                      backgroundColor:
-                        theme.border,
+                      borderLeftColor: theme.primary,
+                      backgroundColor: theme.dangerSoft,
                     },
                   ]}
-                />
-
-                <View style={styles.notesSection}>
-                  <Text
-                    style={[
-                      styles.sectionEyebrow,
-                      {
-                        color:
-                          theme.textMuted,
-                      },
-                    ]}
-                  >
-                    NOTES
+                >
+                  <Text style={[styles.labelSmall, { color: theme.danger }]}>
+                    IMPORTANT NOTES
                   </Text>
-
                   <Text
                     style={[
-                      styles.notes,
-                      {
-                        color:
-                          theme.textSecondary,
-                      },
+                      styles.notesContent,
+                      { color: theme.textSecondary },
                     ]}
                   >
                     {job.notes}
                   </Text>
                 </View>
-              </>
-            ) : null}
-          </ScrollView>
+              )}
+            </ScrollView>
+          </ScreenContainer>
 
-          {action ? (
+          {!isFinalised && (
             <View
-              pointerEvents="box-none"
               style={[
-                styles.footer,
+                styles.footerBar,
                 {
-                  paddingBottom:
-                    Math.max(
-                      insets.bottom,
-                      10,
-                    ),
-                  backgroundColor:
-                    theme.background,
-                  borderTopColor:
-                    theme.border,
+                  backgroundColor: theme.surface,
+                  borderTopColor: theme.border,
+                  paddingBottom: Math.max(insets.bottom, 16),
                 },
               ]}
             >
               <Pressable
-                accessibilityRole="button"
-                disabled={
-                  actionMutation.isPending
-                }
-                onPress={() => {
-                  void runAction();
-                }}
+                disabled={actionMutation.isPending || isBlocked}
+                onPress={handleAction}
                 style={({ pressed }) => [
-                  styles.primaryButton,
+                  styles.actionButton,
                   {
-                    backgroundColor:
-                      theme.action,
-                  },
-                  pressed &&
-                    !actionMutation.isPending && {
-                      opacity: 0.8,
-                    },
-                  actionMutation.isPending && {
-                    opacity: 0.6,
+                    backgroundColor: isSubmitted
+                      ? theme.surfaceSecondary
+                      : pressed
+                        ? theme.actionPressed
+                        : theme.action,
+                    borderColor: isSubmitted ? theme.border : "transparent",
+                    borderWidth: isSubmitted ? 1 : 0,
+                    opacity: pressed ? 0.9 : actionMutation.isPending ? 0.6 : 1,
                   },
                 ]}
               >
-                {actionMutation.isPending ? (
-                  <ActivityIndicator
-                    size="small"
-                    color={theme.actionText}
-                  />
-                ) : (
-                  <Text style={[styles.primaryButtonText, { color: theme.actionText }]}>
-                    {action.label}
-                  </Text>
-                )}
+                <Text
+                  style={[
+                    styles.actionLabel,
+                    { color: isSubmitted ? theme.text : theme.actionText },
+                  ]}
+                >
+                  {isSubmitted
+                    ? "View Submitted Report"
+                    : isInWorkspace
+                      ? "Continue Workspace"
+                      : action?.label || "Update Status"}
+                </Text>
+                <Ionicons
+                  name={isSubmitted ? "eye-outline" : "arrow-forward"}
+                  size={18}
+                  color={isSubmitted ? theme.text : theme.actionText}
+                />
               </Pressable>
             </View>
-          ) : null}
-        </View>
-      </ScreenContainer>
-
-      <AppModal
-        visible={Boolean(
-          actionError,
-        )}
-        title="Job update failed"
-        message={
-          actionError ??
-          undefined
-        }
-        onClose={() =>
-          setActionError(null)
-        }
-      />
-    </>
-  );
-}
-
-function InfoBlock({
-  eyebrow,
-  value,
-  secondary,
-  secondaryPress,
-}: {
-  eyebrow: string;
-  value: string;
-  secondary?: string;
-  secondaryPress?: () => void;
-}) {
-  const theme = useAppTheme();
-
-  return (
-    <View style={styles.infoBlock}>
-      <Text
-        style={[
-          styles.sectionEyebrow,
-          {
-            color: theme.textMuted,
-          },
-        ]}
-      >
-        {eyebrow}
-      </Text>
-
-      <Text
-        selectable
-        style={[
-          styles.infoValue,
-          {
-            color: theme.text,
-          },
-        ]}
-      >
-        {value}
-      </Text>
-
-      {secondary ? (
-        secondaryPress ? (
-          <Pressable
-            onPress={
-              secondaryPress
-            }
-            style={({ pressed }) => [
-              styles.secondaryPress,
-              pressed && {
-                opacity: 0.55,
-              },
-            ]}
-          >
-            <Text
-              style={[
-                styles.infoSecondary,
-                {
-                  color:
-                    theme.primary,
-                },
-              ]}
-            >
-              {secondary}
-            </Text>
-          </Pressable>
-        ) : (
-          <Text
-            style={[
-              styles.infoSecondary,
-              {
-                color:
-                  theme.textSecondary,
-              },
-            ]}
-          >
-            {secondary}
-          </Text>
-        )
+          )}
+        </>
       ) : null}
+
+      <AppLoadingOverlay visible={isOverlayLoading} message={overlayMessage} />
     </View>
   );
 }
 
-const styles =
-  StyleSheet.create({
-    screen: {
-      flex: 1,
-    },
+function InfoTile({ icon, label, value, sub, onPress }: any) {
+  const theme = useAppTheme();
+  const isPhone = label === "CUSTOMER CONTACT" && sub !== "Phone unavailable";
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={!onPress}
+      style={({ pressed }) => [
+        styles.tile,
+        {
+          backgroundColor: theme.surface,
+          borderColor: theme.border,
+          opacity: pressed ? 0.8 : 1,
+        },
+      ]}
+    >
+      <View style={styles.tileHeader}>
+        <Ionicons name={icon} size={14} color={theme.textMuted} />
+        <Text style={[styles.labelSmall, { color: theme.textMuted }]}>
+          {label}
+        </Text>
+      </View>
+      <Text style={[styles.tileValue, { color: theme.text }]}>{value}</Text>
+      <Text
+        style={[
+          styles.tileSub,
+          { color: isPhone ? theme.primary : theme.textSecondary },
+        ]}
+      >
+        {sub}
+      </Text>
+    </Pressable>
+  );
+}
 
-    content: {
-      paddingTop: 16,
-    },
-
-    topBar: {
-      minHeight: 42,
-
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent:
-        "space-between",
-
-      gap: 16,
-    },
-
-    backButton: {
-      minHeight: 36,
-
-      justifyContent: "center",
-    },
-
-    backText: {
-      fontSize: 14,
-      lineHeight: 20,
-
-      fontWeight:
-        fontWeight.bold,
-    },
-
-    heading: {
-      paddingTop: 22,
-      paddingBottom: 24,
-    },
-
-    title: {
-      marginTop: 13,
-
-      fontSize: 31,
-      lineHeight: 36,
-
-      fontWeight:
-        fontWeight.bold,
-
-      letterSpacing: -0.85,
-    },
-
-    registrationRow: {
-      marginTop: 9,
-
-      flexDirection: "row",
-      alignItems: "center",
-
-      gap: 12,
-    },
-
-    registration: {
-      fontSize: 12,
-      lineHeight: 17,
-
-      fontWeight:
-        fontWeight.bold,
-
-      letterSpacing: 0.75,
-    },
-
-    jobKind: {
-      fontSize: 13,
-      lineHeight: 18,
-
-      fontWeight:
-        fontWeight.medium,
-    },
-
-    sectionDivider: {
-      height:
-        StyleSheet.hairlineWidth,
-    },
-
-    grid: {
-      flexDirection: "row",
-
-      gap: 20,
-
-      paddingVertical: 24,
-    },
-
-    infoBlock: {
-      flex: 1,
-      minWidth: 0,
-    },
-
-    sectionEyebrow: {
-      fontSize: 10,
-      lineHeight: 14,
-
-      fontWeight:
-        fontWeight.bold,
-
-      letterSpacing: 0.95,
-    },
-
-    infoValue: {
-      marginTop: 8,
-
-      fontSize: 15,
-      lineHeight: 21,
-
-      fontWeight:
-        fontWeight.bold,
-    },
-
-    infoSecondary: {
-      marginTop: 5,
-
-      fontSize: 12,
-      lineHeight: 17,
-
-      fontWeight:
-        fontWeight.medium,
-    },
-
-    secondaryPress: {
-      alignSelf:
-        "flex-start",
-    },
-
-    locationSection: {
-      paddingVertical: 24,
-    },
-
-    location: {
-      marginTop: 9,
-
-      fontSize: 16,
-      lineHeight: 23,
-
-      fontWeight:
-        fontWeight.semibold,
-    },
-
-    locationActions: {
-      marginTop: 12,
-
-      flexDirection: "row",
-      flexWrap: "wrap",
-
-      gap: 20,
-    },
-
-    textAction: {
-      minHeight: 34,
-
-      justifyContent: "center",
-    },
-
-    textActionLabel: {
-      fontSize: 13,
-      lineHeight: 18,
-
-      fontWeight:
-        fontWeight.bold,
-    },
-
-    notesSection: {
-      paddingVertical: 24,
-    },
-
-    notes: {
-      marginTop: 9,
-
-      fontSize: 14,
-      lineHeight: 21,
-    },
-
-    footer: {
-      position: "absolute",
-
-      left: 0,
-      right: 0,
-      bottom: 0,
-
-      paddingTop: 12,
-      paddingHorizontal: 0,
-
-      borderTopWidth:
-        StyleSheet.hairlineWidth,
-    },
-
-    primaryButton: {
-      minHeight: 52,
-
-      alignItems: "center",
-      justifyContent: "center",
-
-      borderRadius: 12,
-    },
-
-    primaryButtonText: {
-      fontSize: 14,
-      lineHeight: 19,
-
-      fontWeight:
-        fontWeight.bold,
-
-      letterSpacing: 0.1,
-    },
-  });
-
+const styles = StyleSheet.create({
+  flex: { flex: 1 },
+  noPadding: { paddingHorizontal: 0 },
+  content: { padding: spacing.xl, gap: spacing.lg },
+  topBar: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: spacing.xl,
+    paddingTop: 12,
+  },
+  backLink: { flexDirection: "row", alignItems: "center", gap: 4 },
+  backLabel: { fontSize: 16, fontWeight: fontWeight.bold },
+  headerCard: {
+    padding: spacing.xl,
+    borderRadius: radius.xl,
+    borderWidth: 1,
+    gap: spacing.sm,
+  },
+  mainTitle: { fontSize: 26, fontWeight: fontWeight.bold, letterSpacing: -0.6 },
+  headerMeta: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    marginTop: 4,
+  },
+  ukPlate: {
+    flexDirection: "row",
+    borderRadius: 6,
+    borderWidth: 1,
+    overflow: "hidden",
+  },
+  plateFlag: { width: 16, justifyContent: "center", alignItems: "center" },
+  ukText: { fontSize: 7, fontWeight: "bold" },
+  regText: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    fontWeight: "800",
+    fontSize: 15,
+  },
+  metaText: { fontSize: 13, fontWeight: fontWeight.medium },
+  labelSmall: { fontSize: 10, fontWeight: "bold", letterSpacing: 1 },
+  evidenceContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: 4,
+  },
+  evidenceInfo: { fontSize: 13, fontWeight: "600" },
+  linkText: { fontSize: 13, fontWeight: "bold" },
+  gridRow: { flexDirection: "row", gap: spacing.md },
+  tile: {
+    flex: 1,
+    padding: spacing.md,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    gap: 4,
+  },
+  tileHeader: { flexDirection: "row", alignItems: "center", gap: 6 },
+  tileValue: { fontSize: 16, fontWeight: "bold" },
+  tileSub: { fontSize: 12, fontWeight: "bold" },
+  card: {
+    padding: spacing.lg,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    gap: 8,
+  },
+  address: { fontSize: 15, fontWeight: "600", lineHeight: 22 },
+  navButton: {
+    marginTop: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    borderWidth: 1,
+    height: 44,
+    borderRadius: radius.md,
+  },
+  navText: { fontSize: 12, fontWeight: "bold" },
+  notesCard: {
+    padding: spacing.lg,
+    borderLeftWidth: 4,
+    borderRadius: radius.md,
+  },
+  notesContent: { fontSize: 14, lineHeight: 21, marginTop: 4 },
+  footerBar: {
+    position: "absolute",
+    bottom: 0,
+    width: "100%",
+    padding: spacing.xl,
+    borderTopWidth: 1,
+  },
+  actionButton: {
+    height: 56,
+    borderRadius: radius.lg,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 12,
+  },
+  actionLabel: { fontSize: 16, fontWeight: "bold" },
+});

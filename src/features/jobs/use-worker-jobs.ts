@@ -1,122 +1,58 @@
-import {
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
+import { getWorkerJobAction } from "@/features/jobs/job.actions";
+import { toastWorkerJobActionSuccess } from "@/features/toast/toast-store";
 import {
   advanceServiceBooking,
   fetchWorkerJobDetail,
   fetchWorkerJobs,
   startVerificationInspection,
 } from "@/services/jobs/worker-jobs.service";
-import type {
-  WorkerJob,
-} from "@/types/job";
+import type { WorkerJob } from "@/types/job";
 
-import { toastWorkerJobActionSuccess } from "@/features/toast/toast-store";
 export const workerJobKeys = {
-  root: (
-    employeeId: string,
-  ) =>
-    [
-      "worker-jobs",
-      employeeId,
-    ] as const,
-
-  list: (
-    employeeId: string,
-  ) =>
-    [
-      ...workerJobKeys.root(
-        employeeId,
-      ),
-      "list",
-    ] as const,
-
-  detail: (
-    employeeId: string,
-    assignmentId: string,
-  ) =>
-    [
-      ...workerJobKeys.root(
-        employeeId,
-      ),
-      "detail",
-      assignmentId,
-    ] as const,
+  root: (employeeId: string) => ["worker-jobs", employeeId] as const,
+  list: (employeeId: string) =>
+    [...workerJobKeys.root(employeeId), "list"] as const,
+  detail: (employeeId: string, assignmentId: string) =>
+    [...workerJobKeys.root(employeeId), "detail", assignmentId] as const,
 };
 
-export function useWorkerJobs(
-  employeeId:
-    | string
-    | undefined,
-) {
+export function useWorkerJobs(employeeId: string | undefined) {
   return useQuery({
-    queryKey: workerJobKeys.list(
-      employeeId ?? "none",
-    ),
-
-    queryFn: () =>
-      fetchWorkerJobs(
-        employeeId as string,
-      ),
-
-    enabled:
-      Boolean(employeeId),
-
-    staleTime: 60_000,
+    queryKey: workerJobKeys.list(employeeId ?? "none"),
+    queryFn: () => fetchWorkerJobs(employeeId as string),
+    enabled: Boolean(employeeId),
+    staleTime: 30_000,
     gcTime: 10 * 60_000,
-
-    refetchOnMount: false,
+    refetchOnMount: true,
     refetchOnWindowFocus: false,
   });
 }
 
 export function useWorkerJobDetail(
-  employeeId:
-    | string
-    | undefined,
-  assignmentId:
-    | string
-    | undefined,
+  employeeId: string | undefined,
+  assignmentId: string | undefined,
 ) {
   return useQuery({
-    queryKey:
-      workerJobKeys.detail(
-        employeeId ?? "none",
-        assignmentId ?? "none",
-      ),
-
+    queryKey: workerJobKeys.detail(
+      employeeId ?? "none",
+      assignmentId ?? "none",
+    ),
     queryFn: () =>
-      fetchWorkerJobDetail(
-        employeeId as string,
-        assignmentId as string,
-      ),
-
-    enabled:
-      Boolean(
-        employeeId &&
-          assignmentId,
-      ),
-
+      fetchWorkerJobDetail(employeeId as string, assignmentId as string),
+    enabled: Boolean(employeeId && assignmentId),
     staleTime: 30_000,
     gcTime: 10 * 60_000,
-
     refetchOnWindowFocus: false,
   });
 }
 
 export function useAdvanceServiceBooking(
-  employeeId:
-    | string
-    | undefined,
-  assignmentId:
-    | string
-    | undefined,
+  employeeId: string | undefined,
+  assignmentId: string | undefined,
 ) {
-  const queryClient =
-    useQueryClient();
+  const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: ({
@@ -124,36 +60,18 @@ export function useAdvanceServiceBooking(
       target,
     }: {
       bookingId: string;
-      target:
-        | "on_the_way"
-        | "in_progress"
-        | "completed";
-    }) =>
-      advanceServiceBooking(
-        bookingId,
-        target,
-      ),
-
+      target: "on_the_way" | "in_progress" | "completed";
+    }) => advanceServiceBooking(bookingId, target),
     onSuccess: async () => {
-      if (!employeeId) {
-        return;
-      }
+      if (!employeeId) return;
 
       await Promise.all([
         queryClient.invalidateQueries({
-          queryKey:
-            workerJobKeys.root(
-              employeeId,
-            ),
+          queryKey: workerJobKeys.root(employeeId),
         }),
-
         assignmentId
           ? queryClient.invalidateQueries({
-              queryKey:
-                workerJobKeys.detail(
-                  employeeId,
-                  assignmentId,
-                ),
+              queryKey: workerJobKeys.detail(employeeId, assignmentId),
             })
           : Promise.resolve(),
       ]);
@@ -162,44 +80,24 @@ export function useAdvanceServiceBooking(
 }
 
 export function useStartVerificationInspection(
-  employeeId:
-    | string
-    | undefined,
-  assignmentId:
-    | string
-    | undefined,
+  employeeId: string | undefined,
+  assignmentId: string | undefined,
 ) {
-  const queryClient =
-    useQueryClient();
+  const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (
-      verificationRequestId: string,
-    ) =>
-      startVerificationInspection(
-        verificationRequestId,
-      ),
-
+    mutationFn: (verificationRequestId: string) =>
+      startVerificationInspection(verificationRequestId),
     onSuccess: async () => {
-      if (!employeeId) {
-        return;
-      }
+      if (!employeeId) return;
 
       await Promise.all([
         queryClient.invalidateQueries({
-          queryKey:
-            workerJobKeys.root(
-              employeeId,
-            ),
+          queryKey: workerJobKeys.root(employeeId),
         }),
-
         assignmentId
           ? queryClient.invalidateQueries({
-              queryKey:
-                workerJobKeys.detail(
-                  employeeId,
-                  assignmentId,
-                ),
+              queryKey: workerJobKeys.detail(employeeId, assignmentId),
             })
           : Promise.resolve(),
       ]);
@@ -207,222 +105,95 @@ export function useStartVerificationInspection(
   });
 }
 
+function applyOptimisticStatus(job: WorkerJob): WorkerJob {
+  const action = getWorkerJobAction(job);
 
+  if (action?.type === "service" && action.target === "on_the_way") {
+    return { ...job, status: "on_the_way" };
+  }
 
-export function useRunWorkerJobAction(
-  employeeId:
-    | string
-    | undefined,
-) {
-  const queryClient =
-    useQueryClient();
+  if (action?.type === "service" && action.target === "in_progress") {
+    return { ...job, status: "in_progress", assignmentStatus: "in_progress" };
+  }
+
+  if (action?.type === "service" && action.target === "completed") {
+    return {
+      ...job,
+      status: "completed",
+      assignmentStatus: "completed",
+      completedAt: new Date().toISOString(),
+    };
+  }
+
+  if (action?.type === "inspection") {
+    return {
+      ...job,
+      status: "inspection_in_progress",
+      assignmentStatus: "in_progress",
+    };
+  }
+
+  return job;
+}
+
+export function useRunWorkerJobAction(employeeId: string | undefined) {
+  const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({
-      job,
-    }: {
-      job: WorkerJob;
-    }) => {
-      if (
-        job.kind === "service"
-      ) {
-        if (
-          job.status ===
-          "assigned"
-        ) {
-          await advanceServiceBooking(
-            job.jobId,
-            "on_the_way",
-          );
+    mutationFn: async ({ job }: { job: WorkerJob }) => {
+      const action = getWorkerJobAction(job);
 
-          return;
-        }
-
-        if (
-          job.status ===
-          "on_the_way"
-        ) {
-          await advanceServiceBooking(
-            job.jobId,
-            "in_progress",
-          );
-
-          return;
-        }
-
-        if (
-          job.status ===
-          "in_progress"
-        ) {
-          await advanceServiceBooking(
-            job.jobId,
-            "completed",
-          );
-
-          return;
-        }
-      }
-
-      if (
-        job.kind === "inspection" &&
-        job.status ===
-          "inspection_scheduled"
-      ) {
-        await startVerificationInspection(
-          job.jobId,
-        );
-
+      if (action?.type === "service") {
+        await advanceServiceBooking(job.jobId, action.target);
         return;
       }
 
-      throw new Error(
-        "No worker action is available for this job status.",
-      );
-    },
-
-    onMutate: async ({
-      job,
-    }) => {
-      if (!employeeId) {
-        return {
-          previous: undefined,
-        };
+      if (action?.type === "inspection") {
+        await startVerificationInspection(job.jobId);
+        return;
       }
 
-      const key =
-        workerJobKeys.list(
-          employeeId,
-        );
+      throw new Error("No worker action is available for this job status.");
+    },
 
-      await queryClient.cancelQueries({
-        queryKey: key,
-      });
+    onMutate: async ({ job }) => {
+      if (!employeeId) {
+        return { previous: undefined };
+      }
 
-      const previous =
-        queryClient.getQueryData<
-          WorkerJob[]
-        >(key);
+      const key = workerJobKeys.list(employeeId);
+      await queryClient.cancelQueries({ queryKey: key });
+      const previous = queryClient.getQueryData<WorkerJob[]>(key);
 
-      queryClient.setQueryData<
-        WorkerJob[]
-      >(
+      queryClient.setQueryData<WorkerJob[]>(
         key,
         (current) =>
-          current?.map((item) => {
-            if (
-              item.assignmentId !==
-              job.assignmentId
-            ) {
-              return item;
-            }
-
-            if (
-              job.kind === "service"
-            ) {
-              if (
-                job.status ===
-                "assigned"
-              ) {
-                return {
-                  ...item,
-                  status:
-                    "on_the_way",
-                };
-              }
-
-              if (
-                job.status ===
-                "on_the_way"
-              ) {
-                return {
-                  ...item,
-                  status:
-                    "in_progress",
-                  assignmentStatus:
-                    "in_progress",
-                };
-              }
-
-              if (
-                job.status ===
-                "in_progress"
-              ) {
-                return {
-                  ...item,
-                  status:
-                    "completed",
-                  assignmentStatus:
-                    "completed",
-                  completedAt:
-                    new Date().toISOString(),
-                };
-              }
-            }
-
-            if (
-              job.kind ===
-                "inspection" &&
-              job.status ===
-                "inspection_scheduled"
-            ) {
-              return {
-                ...item,
-                status:
-                  "inspection_in_progress",
-                assignmentStatus:
-                  "in_progress",
-              };
-            }
-
-            return item;
-          }) ?? current,
+          current?.map((item) =>
+            item.assignmentId === job.assignmentId
+              ? applyOptimisticStatus(job)
+              : item,
+          ) ?? current,
       );
 
-      return {
-        previous,
-      };
+      return { previous };
     },
 
-    onSuccess: (
-      _data,
-      { job },
-    ) => {
-      toastWorkerJobActionSuccess(
-        job.kind,
-        job.status,
-      );
+    onSuccess: (_data, { job }) => {
+      toastWorkerJobActionSuccess(job.kind, job.status);
     },
 
-    onError: (
-      _error,
-      _variables,
-      context,
-    ) => {
-      if (
-        !employeeId ||
-        !context?.previous
-      ) {
-        return;
-      }
-
+    onError: (_error, _variables, context) => {
+      if (!employeeId || !context?.previous) return;
       queryClient.setQueryData(
-        workerJobKeys.list(
-          employeeId,
-        ),
+        workerJobKeys.list(employeeId),
         context.previous,
       );
     },
 
     onSettled: async () => {
-      if (!employeeId) {
-        return;
-      }
-
+      if (!employeeId) return;
       await queryClient.invalidateQueries({
-        queryKey:
-          workerJobKeys.root(
-            employeeId,
-          ),
+        queryKey: workerJobKeys.root(employeeId),
       });
     },
   });

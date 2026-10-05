@@ -192,11 +192,8 @@ export default function RegisterScreen() {
             <View style={styles.miniBrand}>
               <FengxingWheel size={30} duration={9000} />
               <View style={styles.wordmark}>
-                <Text style={[styles.brandText, { color: theme.text }]}>
-                  feng
-                </Text>
                 <Text style={[styles.brandText, { color: theme.primary }]}>
-                  xing
+                  Shaz
                 </Text>
               </View>
             </View>
@@ -210,7 +207,7 @@ export default function RegisterScreen() {
                   CREATE YOUR ACCOUNT
                 </Text>
                 <Text style={[styles.title, { color: theme.text }]}>
-                  Join Fengxing today
+                  Join Shaz today
                 </Text>
                 <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
                   It only takes a moment. Your account lets you buy, sell and
@@ -312,7 +309,7 @@ export default function RegisterScreen() {
                 </Text>
 
                 <Text style={[styles.title, { color: theme.text }]}>
-                  Join Fengxing today
+                  Join Shaz today
                 </Text>
 
                 <Text style={[styles.subtitle, { color: theme.textSecondary }]}>

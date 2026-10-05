@@ -1,3 +1,5 @@
+// File: src/types/marketplace-detail.ts
+
 export type MarketplaceCarDetail = {
   id: string;
   sellerId: string;
@@ -25,10 +27,11 @@ export type MarketplaceCarDetail = {
   serviceHistory: string | null;
   ulezCompliant: boolean | null;
 
+  status: string; // <-- YE ADD KIYA HAI
+
   isVerified: boolean;
   verifiedAt: string | null;
   verifiedVerificationRequestId: string | null;
 
   images: string[];
 };
-

@@ -19,12 +19,42 @@ type MenuItem = {
 
 // CLEAN MENU LIST (REMOVED DUPLICATE ACCOUNT ITEM)
 const menuItems: MenuItem[] = [
-  { key: "buy-cars", label: "Buy Cars", route: "/(customer)/buy-cars", icon: "sparkles-outline" },
-  { key: "parts", label: "Parts", route: "/(customer)/parts", icon: "cog-outline" },
-  { key: "sell-my-car", label: "Sell My Car", route: "/(customer)/sell-my-car", icon: "car-sport-outline" },
-  { key: "vehicle-inspection", label: "Vehicle Inspection", route: "/(customer)/vehicle-inspection", icon: "shield-checkmark-outline" },
-  { key: "mobile-services", label: "Mobile Services", route: "/(customer)/mobile-services", icon: "build-outline" },
-  { key: "about", label: "About", route: "/(customer)/about", icon: "information-circle-outline" },
+  {
+    key: "vehicle-inspection",
+    label: "Vehicle Inspection",
+    route: "/(customer)/vehicle-inspection",
+    icon: "shield-checkmark-outline",
+  },
+  {
+    key: "mobile-services",
+    label: "Mobile Services",
+    route: "/(customer)/mobile-services",
+    icon: "build-outline",
+  },
+  {
+    key: "buy-cars",
+    label: "Buy Cars",
+    route: "/(customer)/buy-cars",
+    icon: "sparkles-outline",
+  },
+  {
+    key: "parts",
+    label: "Parts",
+    route: "/(customer)/parts",
+    icon: "cog-outline",
+  },
+  {
+    key: "sell-my-car",
+    label: "Sell My Car",
+    route: "/(customer)/sell-my-car",
+    icon: "car-sport-outline",
+  },
+  {
+    key: "about",
+    label: "About",
+    route: "/(customer)/about",
+    icon: "information-circle-outline",
+  },
 ];
 
 export default function CustomerDrawerContent(props: any) {
@@ -45,17 +75,28 @@ export default function CustomerDrawerContent(props: any) {
   return (
     <View style={[styles.container, { backgroundColor: theme.surface }]}>
       {/* DRAWER HEADER (REMOVED RED CUSTOMER BADGE) */}
-      <View style={[styles.header, { backgroundColor: theme.surface, borderBottomColor: theme.border }]}>
+      <View
+        style={[
+          styles.header,
+          { backgroundColor: theme.surface, borderBottomColor: theme.border },
+        ]}
+      >
         <View style={styles.headerTop}>
           <FengxingWheel size={42} duration={12000} />
         </View>
 
         <View style={styles.headerUser}>
-          <Text numberOfLines={1} style={[styles.userName, { color: theme.text }]}>
+          <Text
+            numberOfLines={1}
+            style={[styles.userName, { color: theme.text }]}
+          >
             {name}
           </Text>
           {email ? (
-            <Text numberOfLines={1} style={[styles.userEmail, { color: theme.textSecondary }]}>
+            <Text
+              numberOfLines={1}
+              style={[styles.userEmail, { color: theme.textSecondary }]}
+            >
               {email}
             </Text>
           ) : null}
@@ -114,7 +155,11 @@ export default function CustomerDrawerContent(props: any) {
             pressed && styles.pressed,
           ]}
         >
-          <Ionicons name="person-circle-outline" size={22} color={theme.primary} />
+          <Ionicons
+            name="person-circle-outline"
+            size={22}
+            color={theme.primary}
+          />
           <Text style={[styles.footerAccountText, { color: theme.text }]}>
             Account Settings
           </Text>

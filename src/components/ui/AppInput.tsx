@@ -9,18 +9,22 @@ import {
   View,
 } from "react-native";
 
-import { fontSize, fontWeight } from "@/constants/theme";
+import { fontSize, fontWeight, radius } from "@/constants/theme";
 import { useAppTheme } from "@/hooks/use-app-theme";
 
 type AppInputProps = TextInputProps & {
   label?: string;
+  hint?: string;
   error?: string;
+  success?: string;
   password?: boolean;
 };
 
 export default function AppInput({
   label,
+  hint,
   error,
+  success,
   password = false,
   style,
   onFocus,
@@ -32,16 +36,22 @@ export default function AppInput({
   const [focused, setFocused] = useState(false);
   const [passwordVisible, setPasswordVisible] = useState(false);
 
+  const borderColor = error
+    ? theme.danger
+    : focused
+      ? theme.primary
+      : theme.inputBorder;
+
   return (
-    <View style={[styles.wrapper, !editable && styles.disabled]}>
+    <View style={styles.wrapper}>
       {label ? (
-        <Text style={[styles.label, { color: theme.text }]}>
+        <Text style={[styles.label, { color: theme.textSecondary }]}>
           {label}
         </Text>
       ) : null}
 
       <View style={styles.fieldShell}>
-        {focused ? (
+        {focused && !error ? (
           <View
             pointerEvents="none"
             style={[
@@ -57,12 +67,10 @@ export default function AppInput({
           style={[
             styles.field,
             {
-              backgroundColor: theme.surface,
-              borderColor: error
-                ? theme.danger
-                : focused
-                  ? theme.primary
-                  : theme.inputBorder,
+              backgroundColor: editable
+                ? theme.surface
+                : theme.surfaceSecondary,
+              borderColor,
             },
           ]}
         >
@@ -86,7 +94,7 @@ export default function AppInput({
             style={[
               styles.input,
               {
-                color: theme.text,
+                color: editable ? theme.text : theme.textMuted,
               },
               password && styles.passwordInput,
               style,
@@ -109,7 +117,7 @@ export default function AppInput({
             >
               <Ionicons
                 name={passwordVisible ? "eye-off-outline" : "eye-outline"}
-                size={21}
+                size={18}
                 color={focused ? theme.primary : theme.textMuted}
               />
             </Pressable>
@@ -118,9 +126,21 @@ export default function AppInput({
       </View>
 
       {error ? (
-        <Text style={[styles.error, { color: theme.danger }]}>
-          {error}
-        </Text>
+        <View style={[styles.statusBox, { backgroundColor: theme.dangerSoft }]}>
+          <Text style={[styles.statusText, { color: theme.danger }]}>
+            {error}
+          </Text>
+        </View>
+      ) : success ? (
+        <View
+          style={[styles.statusBox, { backgroundColor: theme.successSoft }]}
+        >
+          <Text style={[styles.statusText, { color: theme.success }]}>
+            {success}
+          </Text>
+        </View>
+      ) : hint ? (
+        <Text style={[styles.hint, { color: theme.textMuted }]}>{hint}</Text>
       ) : null}
     </View>
   );
@@ -129,12 +149,13 @@ export default function AppInput({
 const styles = StyleSheet.create({
   wrapper: {
     width: "100%",
-    gap: 7,
+    gap: 6,
   },
 
   label: {
     fontSize: fontSize.sm,
-    fontWeight: fontWeight.medium,
+    fontWeight: fontWeight.bold,
+    marginBottom: 0,
   },
 
   fieldShell: {
@@ -149,36 +170,36 @@ const styles = StyleSheet.create({
     right: -3,
     bottom: -3,
     borderWidth: 3,
-    borderRadius: 15,
+    borderRadius: radius.md + 3,
   },
 
   field: {
-    minHeight: 48,
+    minHeight: 42,
     flexDirection: "row",
     alignItems: "center",
-    borderWidth: 1,
-    borderRadius: 12,
+    borderWidth: 1.5,
+    borderRadius: radius.md,
     overflow: "hidden",
   },
 
   input: {
     flex: 1,
-    minHeight: 48,
-    paddingHorizontal: 15,
-    paddingVertical: 0,
-    fontSize: 15,
+    minHeight: 42,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: fontSize.sm,
   },
 
   passwordInput: {
-    paddingRight: 52,
+    paddingRight: 44,
   },
 
   eyeButton: {
     position: "absolute",
-    right: 14,
+    right: 10,
     top: 0,
     bottom: 0,
-    width: 34,
+    width: 32,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -187,13 +208,22 @@ const styles = StyleSheet.create({
     opacity: 0.55,
   },
 
-  error: {
+  hint: {
     fontSize: fontSize.xs,
-    lineHeight: 17,
-    marginTop: 1,
+    lineHeight: 16,
+    marginTop: 2,
   },
 
-  disabled: {
-    opacity: 0.6,
+  statusBox: {
+    marginTop: 4,
+    borderRadius: radius.md,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+
+  statusText: {
+    fontSize: fontSize.xs,
+    lineHeight: 16,
+    fontWeight: fontWeight.medium,
   },
 });

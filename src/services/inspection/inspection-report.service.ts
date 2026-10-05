@@ -389,3 +389,17 @@ export async function submitInspectionReport(verificationRequestId: string) {
     throw error;
   }
 }
+
+export async function updateInspectionPhotoCaption(
+  imageId: string,
+  caption: string | null,
+) {
+  const { error } = await supabase
+    .from("inspection_report_images")
+    .update({ caption })
+    .eq("id", imageId);
+
+  if (error) {
+    throw error;
+  }
+}

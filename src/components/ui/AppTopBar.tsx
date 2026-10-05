@@ -26,19 +26,8 @@ export default function AppTopBar({
       ]}
     >
       <View style={styles.wordmark}>
-        <Text
-          style={[
-            styles.wordmarkBase,
-            {
-              color: isDark ? theme.navText : theme.text,
-            },
-          ]}
-        >
-          feng
-        </Text>
-
         <Text style={[styles.wordmarkAccent, { color: theme.primary }]}>
-          xing
+          Shaz
         </Text>
       </View>
 

@@ -1,4 +1,3 @@
-import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useRef, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
@@ -64,7 +63,12 @@ export default function CustomerAccountScreen() {
         contentContainerStyle={styles.content}
       >
         {/* PROFILE HEADER CARD */}
-        <View style={[styles.profileCard, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+        <View
+          style={[
+            styles.profileCard,
+            { backgroundColor: theme.surface, borderColor: theme.border },
+          ]}
+        >
           <FengxingWheel size={58} duration={12000} />
           <View style={styles.headerInfo}>
             <Text style={[styles.userName, { color: theme.text }]}>
@@ -77,29 +81,50 @@ export default function CustomerAccountScreen() {
         </View>
 
         {/* READ-ONLY ACCOUNT DETAILS CARD */}
-        <View style={[styles.detailsCard, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+        <View
+          style={[
+            styles.detailsCard,
+            { backgroundColor: theme.surface, borderColor: theme.border },
+          ]}
+        >
           <Text style={[styles.cardTitle, { color: theme.text }]}>
             Account Details
           </Text>
 
           <View style={styles.detailsList}>
             <View style={styles.detailItem}>
-              <Text style={[styles.detailLabel, { color: theme.textMuted }]}>FULL NAME</Text>
-              <Text style={[styles.detailValue, { color: theme.text }]}>{displayName}</Text>
+              <Text style={[styles.detailLabel, { color: theme.textMuted }]}>
+                FULL NAME
+              </Text>
+              <Text style={[styles.detailValue, { color: theme.text }]}>
+                {displayName}
+              </Text>
             </View>
 
-            <View style={[styles.rowDivider, { backgroundColor: theme.border }]} />
+            <View
+              style={[styles.rowDivider, { backgroundColor: theme.border }]}
+            />
 
             <View style={styles.detailItem}>
-              <Text style={[styles.detailLabel, { color: theme.textMuted }]}>EMAIL ADDRESS</Text>
-              <Text style={[styles.detailValue, { color: theme.text }]}>{email}</Text>
+              <Text style={[styles.detailLabel, { color: theme.textMuted }]}>
+                EMAIL ADDRESS
+              </Text>
+              <Text style={[styles.detailValue, { color: theme.text }]}>
+                {email}
+              </Text>
             </View>
 
-            <View style={[styles.rowDivider, { backgroundColor: theme.border }]} />
+            <View
+              style={[styles.rowDivider, { backgroundColor: theme.border }]}
+            />
 
             <View style={styles.detailItem}>
-              <Text style={[styles.detailLabel, { color: theme.textMuted }]}>PHONE NUMBER</Text>
-              <Text style={[styles.detailValue, { color: theme.text }]}>{phone}</Text>
+              <Text style={[styles.detailLabel, { color: theme.textMuted }]}>
+                PHONE NUMBER
+              </Text>
+              <Text style={[styles.detailValue, { color: theme.text }]}>
+                {phone}
+              </Text>
             </View>
           </View>
         </View>
@@ -132,7 +157,7 @@ export default function CustomerAccountScreen() {
       <AppModal
         visible={logoutVisible}
         title="Log out?"
-        message="You will need to sign in again to access your Fengxing account."
+        message="You will need to sign in again to access your Shaz account."
         confirmText="Log Out"
         onConfirm={handleLogout}
         onClose={() => setLogoutVisible(false)}
@@ -165,7 +190,11 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
   },
   headerInfo: { flex: 1, gap: 4 },
-  userName: { fontSize: fontSize.xl, fontWeight: fontWeight.bold, textAlign: "left" },
+  userName: {
+    fontSize: fontSize.xl,
+    fontWeight: fontWeight.bold,
+    textAlign: "left",
+  },
   userEmail: { fontSize: fontSize.xs, textAlign: "left" },
 
   detailsCard: {
@@ -179,14 +208,27 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 8,
   },
-  cardTitle: { fontSize: fontSize.lg, fontWeight: fontWeight.bold, textAlign: "left" },
+  cardTitle: {
+    fontSize: fontSize.lg,
+    fontWeight: fontWeight.bold,
+    textAlign: "left",
+  },
   detailsList: { gap: spacing.md },
   detailItem: {
     gap: 4,
     alignItems: "flex-start",
   },
-  detailLabel: { fontSize: 10, fontWeight: fontWeight.bold, letterSpacing: 0.8, textAlign: "left" },
-  detailValue: { fontSize: fontSize.md, fontWeight: fontWeight.bold, textAlign: "left" },
+  detailLabel: {
+    fontSize: 10,
+    fontWeight: fontWeight.bold,
+    letterSpacing: 0.8,
+    textAlign: "left",
+  },
+  detailValue: {
+    fontSize: fontSize.md,
+    fontWeight: fontWeight.bold,
+    textAlign: "left",
+  },
   rowDivider: { height: StyleSheet.hairlineWidth },
 
   divider: { height: StyleSheet.hairlineWidth },

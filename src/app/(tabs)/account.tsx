@@ -1,6 +1,5 @@
-import { router } from "expo-router";
 import { useRef, useState } from "react";
-import { ScrollView, StyleSheet, View } from "react-native";
+import { ScrollView, StyleSheet } from "react-native";
 
 import InfoRow from "@/components/jobs/InfoRow";
 import SectionCard from "@/components/jobs/SectionCard";
@@ -12,19 +11,19 @@ import ScreenHeading from "@/components/ui/ScreenHeading";
 import { spacing } from "@/constants/theme";
 import { useAuth } from "@/features/auth/use-auth";
 import { toastError } from "@/features/toast/toast-store";
+import { useSingleNavigation } from "@/hooks/use-single-navigation";
 
 import ThemePreferenceSelector from "@/components/account/ThemePreferenceSelector";
 
 export default function AccountScreen() {
   const { profile, session, signOut } = useAuth();
-
   const [logoutVisible, setLogoutVisible] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const { navigate, isBlocked } = useSingleNavigation();
 
-  // SNAPSHOT GUARD: Preserve last valid profile/session to prevent 1-frame unmount text shift
+  // SNAPSHOT GUARD: Yeh logout ke doran UI ko blank hone se bachata hai
   const lastProfile = useRef(profile);
   const lastSession = useRef(session);
-
   if (profile) lastProfile.current = profile;
   if (session) lastSession.current = session;
 
@@ -32,15 +31,13 @@ export default function AccountScreen() {
   const currentSession = session || lastSession.current;
 
   const handleLogout = async () => {
+    if (isBlocked || isLoggingOut) return;
     setIsLoggingOut(true);
     try {
-      // 1. Close Modal overlay FIRST
       setLogoutVisible(false);
-
-      // 2. Wait 200ms for native modal overlay close animation to complete
       await new Promise((resolve) => setTimeout(resolve, 200));
-
-      // 3. Clear auth session (AuthProvider handles clean redirect to /login)
+      // ab navigate hook se guard ke saath
+      navigate("/login" as any);
       await signOut();
     } catch {
       toastError("Logout failed. Please try again.");
@@ -65,16 +62,29 @@ export default function AccountScreen() {
           />
 
           <SectionCard title="Worker details">
-            <InfoRow label="Name" value={currentProfile?.full_name || "Not provided"} />
-            <InfoRow label="Email" value={currentSession?.user?.email || "Not provided"} />
-            <InfoRow label="Phone" value={currentProfile?.phone || "Not provided"} />
+            <InfoRow
+              label="Name"
+              value={currentProfile?.full_name || "Not provided"}
+            />
+            <InfoRow
+              label="Email"
+              value={currentSession?.user?.email || "Not provided"}
+            />
+            <InfoRow
+              label="Phone"
+              value={currentProfile?.phone || "Not provided"}
+            />
             <InfoRow
               label="Employee ID"
               value={currentProfile?.employee_id || "Not assigned"}
             />
             <InfoRow
               label="Status"
-              value={currentProfile?.staff_status === "active" ? "Active" : "Inactive"}
+              value={
+                currentProfile?.staff_status === "active"
+                  ? "Active"
+                  : "Inactive"
+              }
               last
             />
           </SectionCard>
@@ -84,7 +94,12 @@ export default function AccountScreen() {
           <AppButton
             title="Log out"
             variant="danger"
-            onPress={() => setLogoutVisible(true)}
+            onPress={() => {
+              if (isBlocked) return;
+              setLogoutVisible(true);
+            }}
+            loading={isLoggingOut}
+            disabled={isBlocked || isLoggingOut}
           />
         </ScrollView>
       </ScreenContainer>
@@ -95,7 +110,7 @@ export default function AccountScreen() {
         message="You will need to sign in again to access your assigned jobs."
         confirmText="Log out"
         onConfirm={handleLogout}
-        onClose={() => setLogoutVisible(false)}
+        onClose={() => !isLoggingOut && !isBlocked && setLogoutVisible(false)}
         loading={isLoggingOut}
         destructive
       />
@@ -104,10 +119,7 @@ export default function AccountScreen() {
 }
 
 const styles = StyleSheet.create({
-  screen: {
-    paddingHorizontal: 0,
-  },
-
+  screen: { paddingHorizontal: 0 },
   content: {
     paddingHorizontal: spacing.xl,
     paddingTop: spacing.xxl,

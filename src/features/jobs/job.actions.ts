@@ -1,6 +1,4 @@
-import type {
-  WorkerJob,
-} from "@/types/job";
+import type { WorkerJob } from "@/types/job";
 
 export type WorkerJobAction =
   | {
@@ -23,11 +21,21 @@ export type WorkerJobAction =
       label: "Start inspection";
     };
 
-export function getWorkerJobAction(
-  job: WorkerJob,
-): WorkerJobAction | null {
+function canStartServiceJourney(status: WorkerJob["status"]) {
+  return status === "assigned" || status === "confirmed";
+}
+
+function canStartInspection(status: WorkerJob["status"]) {
+  return (
+    status === "assigned" ||
+    status === "inspection_scheduled" ||
+    status === "confirmed"
+  );
+}
+
+export function getWorkerJobAction(job: WorkerJob): WorkerJobAction | null {
   if (job.kind === "service") {
-    if (job.status === "assigned") {
+    if (canStartServiceJourney(job.status)) {
       return {
         type: "service",
         label: "Start journey",
@@ -54,10 +62,7 @@ export function getWorkerJobAction(
     return null;
   }
 
-  if (
-    job.kind === "inspection" &&
-    job.status === "inspection_scheduled"
-  ) {
+  if (job.kind === "inspection" && canStartInspection(job.status)) {
     return {
       type: "inspection",
       label: "Start inspection",
@@ -66,4 +71,3 @@ export function getWorkerJobAction(
 
   return null;
 }
-

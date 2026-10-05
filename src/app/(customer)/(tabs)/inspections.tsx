@@ -1,10 +1,6 @@
-import { router } from "expo-router";
-import {
-  FlatList,
-  RefreshControl,
-  StyleSheet,
-  View,
-} from "react-native";
+import { useFocusEffect } from "expo-router";
+import { useCallback } from "react";
+import { FlatList, RefreshControl, StyleSheet, View } from "react-native";
 
 import CustomerInspectionCard from "@/components/customer/CustomerInspectionCard";
 import CustomerListState from "@/components/customer/CustomerListState";
@@ -15,57 +11,39 @@ import { spacing } from "@/constants/theme";
 import { useAuth } from "@/features/auth/use-auth";
 import { useCustomerDashboard } from "@/features/customer/use-customer-dashboard";
 import { useAppTheme } from "@/hooks/use-app-theme";
+import { useSingleNavigation } from "@/hooks/use-single-navigation";
 
 export default function CustomerInspectionsScreen() {
-  const theme =
-    useAppTheme();
+  const theme = useAppTheme();
+  const { session } = useAuth();
+  const { navigate } = useSingleNavigation();
+  const query = useCustomerDashboard(session?.user.id);
+  const inspections = query.data?.inspections ?? [];
 
-  const { session } =
-    useAuth();
-
-  const query =
-    useCustomerDashboard(
-      session?.user.id,
-    );
-
-  const inspections =
-    query.data
-      ?.inspections ??
-    [];
+  // Auto-refetch when this screen is focused (tab is switched)
+  useFocusEffect(
+    useCallback(() => {
+      if (!query.isFetching) {
+        void query.refetch();
+      }
+    }, []),
+  );
 
   return (
-    <ScreenContainer
-      contentStyle={
-        styles.screen
-      }
-    >
-      <CustomerTopBar
-        title="Inspections"
-      />
+    <ScreenContainer contentStyle={styles.screen}>
+      <CustomerTopBar title="Inspections" showMenu />
 
       <FlatList
         data={inspections}
-        keyExtractor={(item) =>
-          item.id
-        }
+        keyExtractor={(item) => item.id}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={
-          styles.content
-        }
+        contentContainerStyle={styles.content}
         refreshControl={
           <RefreshControl
-            refreshing={
-              query.isRefetching
-            }
-            onRefresh={() =>
-              void query.refetch()
-            }
-            tintColor={
-              theme.primary
-            }
-            colors={[
-              theme.primary,
-            ]}
+            refreshing={query.isRefetching}
+            onRefresh={() => void query.refetch()}
+            tintColor={theme.primary}
+            colors={[theme.primary]}
           />
         }
         ListHeaderComponent={
@@ -75,55 +53,31 @@ export default function CustomerInspectionsScreen() {
               subtitle="Your vehicle inspection requests, progress and reports."
               actionLabel="Request Vehicle Inspection"
               actionVariant="secondary"
-              onAction={() =>
-                router.push(
-                  "/(customer)/vehicle-inspection",
-                )
-              }
+              onAction={() => navigate("/(customer)/vehicle-inspection")}
             />
           </View>
         }
-        ItemSeparatorComponent={() => (
-          <View
-            style={
-              styles.separator
-            }
-          />
-        )}
+        ItemSeparatorComponent={() => <View style={styles.separator} />}
         renderItem={({ item }) => (
           <CustomerInspectionCard
             inspection={item}
             onViewRequest={() =>
-              router.push({
-                pathname:
-                  "/(customer)/inspection/[inspectionId]",
-                params: {
-                  inspectionId:
-                    item.id,
-                },
+              navigate("/(customer)/inspection/[inspectionId]", {
+                inspectionId: item.id,
               })
             }
           />
         )}
         ListEmptyComponent={
           <CustomerListState
-            loading={
-              query.isLoading
-            }
-            error={
-              query.isError
-            }
+            loading={query.isLoading}
+            error={query.isError}
             empty={
-              !query.isLoading &&
-              !query.isError &&
-              inspections.length ===
-                0
+              !query.isLoading && !query.isError && inspections.length === 0
             }
-            emptyTitle="No inspections yet"
-            emptyMessage="Your Fengxing vehicle inspection requests will appear here."
-            onRetry={() =>
-              void query.refetch()
-            }
+            emptyTitle="No vehicle inspections yet"
+            emptyMessage="Your buyer and seller inspection requests will appear here."
+            onRetry={() => void query.refetch()}
           />
         }
       />
@@ -131,29 +85,23 @@ export default function CustomerInspectionsScreen() {
   );
 }
 
-const styles =
-  StyleSheet.create({
-    screen: {
-      paddingHorizontal: 0,
-    },
+const styles = StyleSheet.create({
+  screen: {
+    paddingHorizontal: 0,
+  },
 
-    content: {
-      flexGrow: 1,
-      paddingHorizontal:
-        spacing.xl,
-      paddingTop:
-        spacing.xxl,
-      paddingBottom:
-        spacing.xxxl,
-    },
+  content: {
+    flexGrow: 1,
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.xxl,
+    paddingBottom: spacing.xxxl,
+  },
 
-    header: {
-      marginBottom:
-        spacing.xxl,
-    },
+  header: {
+    marginBottom: spacing.xxl,
+  },
 
-    separator: {
-      height: spacing.md,
-    },
-  });
-
+  separator: {
+    height: spacing.md,
+  },
+});

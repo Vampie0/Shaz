@@ -1,110 +1,30 @@
-export type CustomerTabHref =
-  | "/(customer)/(tabs)/overview"
-  | "/(customer)/(tabs)/my-cars"
-  | "/(customer)/(tabs)/garage"
-  | "/(customer)/(tabs)/bookings"
-  | "/(customer)/(tabs)/inspections";
+// // File: src/features/customer/customer-drawer-origin.ts
 
-let drawerOrigin:
-  | CustomerTabHref
-  | null = null;
+// export type CustomerTabHref =
+//   | "/(customer)/(tabs)/overview"
+//   | "/(customer)/(tabs)/my-cars"
+//   | "/(customer)/(tabs)/garage"
+//   | "/(customer)/(tabs)/bookings"
+//   | "/(customer)/(tabs)/inspections";
 
-function normalisePathname(
-  pathname: string,
-) {
-  const clean =
-    pathname
-      .split("?")[0]
-      .split("#")[0]
-      .replace(/\\/g, "/")
-      .replace(/\/+$/, "");
+// let drawerOrigin: CustomerTabHref | null = null;
 
-  return clean || "/";
-}
+// export function rememberCustomerDrawerOrigin(pathname: string) {
+//   // Agar user kisi tab par hai, to usay origin ke tor par save kar lo
+//   if (pathname.includes("/overview"))
+//     drawerOrigin = "/(customer)/(tabs)/overview";
+//   else if (pathname.includes("/my-cars"))
+//     drawerOrigin = "/(customer)/(tabs)/my-cars";
+//   else if (pathname.includes("/garage"))
+//     drawerOrigin = "/(customer)/(tabs)/garage";
+//   else if (pathname.includes("/bookings"))
+//     drawerOrigin = "/(customer)/(tabs)/bookings";
+//   else if (pathname.includes("/inspections"))
+//     drawerOrigin = "/(customer)/(tabs)/inspections";
+// }
 
-function tabHrefFromPathname(
-  pathname: string,
-): CustomerTabHref {
-  const current =
-    normalisePathname(
-      pathname,
-    );
-
-  if (
-    current.endsWith(
-      "/my-cars",
-    )
-  ) {
-    return "/(customer)/(tabs)/my-cars";
-  }
-
-  if (
-    current.endsWith(
-      "/garage",
-    )
-  ) {
-    return "/(customer)/(tabs)/garage";
-  }
-
-  if (
-    current.endsWith(
-      "/bookings",
-    )
-  ) {
-    return "/(customer)/(tabs)/bookings";
-  }
-
-  if (
-    current.endsWith(
-      "/inspections",
-    )
-  ) {
-    return "/(customer)/(tabs)/inspections";
-  }
-
-  return "/(customer)/(tabs)/overview";
-}
-
-const drawerDestinationSuffixes = [
-  "/buy-cars",
-  "/parts",
-  "/sell-my-car",
-  "/vehicle-inspection",
-  "/mobile-services",
-  "/about",
-  "/account",
-] as const;
-
-export function rememberCustomerDrawerOrigin(
-  pathname: string,
-) {
-  drawerOrigin =
-    tabHrefFromPathname(
-      pathname,
-    );
-}
-
-export function takeCustomerDrawerOrigin() {
-  const origin =
-    drawerOrigin;
-
-  drawerOrigin = null;
-
-  return origin;
-}
-
-export function isCustomerDrawerDestination(
-  pathname: string,
-) {
-  const current =
-    normalisePathname(
-      pathname,
-    );
-
-  return drawerDestinationSuffixes.some(
-    (suffix) =>
-      current.endsWith(
-        suffix,
-      ),
-  );
-}
+// export function takeCustomerDrawerOrigin() {
+//   const origin = drawerOrigin;
+//   // Use karne ke baad clear nahi karenge taake multiple backs sahi chalein
+//   return origin;
+// }

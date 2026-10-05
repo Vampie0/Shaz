@@ -9,7 +9,9 @@ type AnimatedSplashScreenProps = {
   onFinish: () => void;
 };
 
-export default function AnimatedSplashScreen({ onFinish }: AnimatedSplashScreenProps) {
+export default function AnimatedSplashScreen({
+  onFinish,
+}: AnimatedSplashScreenProps) {
   const theme = useAppTheme();
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const scaleAnim = useRef(new Animated.Value(0.92)).current;
@@ -60,8 +62,7 @@ export default function AnimatedSplashScreen({ onFinish }: AnimatedSplashScreenP
 
         {/* BRAND WORDMARK */}
         <View style={styles.wordmark}>
-          <Text style={[styles.feng, { color: theme.text }]}>feng</Text>
-          <Text style={[styles.xing, { color: theme.primary }]}>xing</Text>
+          <Text style={[styles.xing, { color: theme.primary }]}>Shaz</Text>
         </View>
 
         {/* CAPTION */}
@@ -95,12 +96,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     marginTop: spacing.xs,
-  },
-  feng: {
-    fontSize: 44,
-    lineHeight: 48,
-    fontWeight: fontWeight.bold,
-    letterSpacing: -1.8,
   },
   xing: {
     fontSize: 44,

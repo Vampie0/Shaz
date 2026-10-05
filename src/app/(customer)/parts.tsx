@@ -1,7 +1,9 @@
+// File: src/app/(customer)/parts.tsx
+
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
-import { router } from "expo-router";
-import { useMemo, useState } from "react";
+import { router, useLocalSearchParams } from "expo-router";
+import { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -18,7 +20,12 @@ import {
 import CustomerTopBar from "@/components/customer/CustomerTopBar";
 import ScreenContainer from "@/components/ui/ScreenContainer";
 import { fontSize, fontWeight, radius, spacing } from "@/constants/theme";
-import { useCustomerParts, usePartCategories } from "@/features/customer/use-parts";
+import { useAuth } from "@/features/auth/use-auth";
+import { useCustomerDashboard } from "@/features/customer/use-customer-dashboard";
+import {
+  useCustomerParts,
+  usePartCategories,
+} from "@/features/customer/use-parts";
 import { useAppTheme } from "@/hooks/use-app-theme";
 import type { PartItem } from "@/services/customer/parts.service";
 
@@ -28,7 +35,29 @@ function formatPrice(value: number) {
 
 export default function CustomerPartsScreen() {
   const theme = useAppTheme();
-  const query = useCustomerParts();
+  const { session } = useAuth();
+  const params = useLocalSearchParams<{ vehicleId?: string }>();
+
+  const [activeVehicleId, setActiveVehicleId] = useState<string | undefined>(
+    params.vehicleId,
+  );
+
+  useEffect(() => {
+    if (params.vehicleId) {
+      setActiveVehicleId(params.vehicleId);
+    }
+  }, [params.vehicleId]);
+
+  // FETCH GARAGE VEHICLES TO FIND THE ACTIVE VEHICLE'S NAME
+  const dashboardQuery = useCustomerDashboard(session?.user.id);
+  const garageVehicles = dashboardQuery.data?.garageVehicles ?? [];
+  const activeVehicle = useMemo(() => {
+    if (!activeVehicleId) return null;
+    return garageVehicles.find((v) => v.id === activeVehicleId) ?? null;
+  }, [activeVehicleId, garageVehicles]);
+
+  // SENIOR'S RPC HOOK: FETCH COMPATIBLE PARTS IF activeVehicleId EXISTS
+  const query = useCustomerParts(activeVehicleId);
   const categoriesQuery = usePartCategories();
 
   const [selectedCategory, setSelectedCategory] = useState<string>("All Parts");
@@ -59,9 +88,14 @@ export default function CustomerPartsScreen() {
     setSearch("");
   };
 
+  const clearVehicleFilter = () => {
+    setActiveVehicleId(undefined);
+    clearFilters();
+  };
+
   return (
     <ScreenContainer contentStyle={styles.screen}>
-      <CustomerTopBar title="Parts" showBack />
+      <CustomerTopBar title="Parts" showMenu />
 
       <FlatList
         data={filteredParts}
@@ -88,61 +122,123 @@ export default function CustomerPartsScreen() {
         }
         ListHeaderComponent={
           <View style={styles.header}>
-            <View
-              style={[
-                styles.fitmentBanner,
-                {
-                  backgroundColor: theme.surface,
-                  borderColor: theme.border,
-                },
-              ]}
-            >
-              <View style={styles.fitmentCopy}>
-                <View style={styles.fitmentHeader}>
-                  <View
-                    style={[
-                      styles.alertIconBg,
-                      { backgroundColor: theme.dangerSoft },
-                    ]}
-                  >
+            {/* SENIOR'S FITMENT BANNER: DYNAMIC ACCORDING TO VEHICLE */}
+            {activeVehicleId ? (
+              /* 1. GREEN ACTIVE COMPATIBLE BANNER */
+              <View
+                style={[
+                  styles.fitmentBanner,
+                  {
+                    backgroundColor: theme.successSoft,
+                    borderColor: theme.success,
+                  },
+                ]}
+              >
+                <View style={styles.fitmentCopy}>
+                  <View style={styles.fitmentHeader}>
                     <Ionicons
-                      name="alert-circle"
-                      size={20}
-                      color={theme.danger}
+                      name="checkmark-circle"
+                      size={22}
+                      color={theme.success}
                     />
+                    <Text
+                      style={[styles.fitmentTitle, { color: theme.success }]}
+                    >
+                      Showing compatible parts
+                    </Text>
                   </View>
 
-                  <Text style={[styles.fitmentTitle, { color: theme.text }]}>
-                    Ensure part fitment
+                  <Text style={[styles.fitmentSubtitle, { color: theme.text }]}>
+                    Filtered for:{" "}
+                    <Text style={{ fontWeight: fontWeight.bold }}>
+                      {activeVehicle
+                        ? `${activeVehicle.year} ${activeVehicle.make} ${activeVehicle.model} (${activeVehicle.registration})`
+                        : "Your selected garage vehicle"}
+                    </Text>
                   </Text>
                 </View>
 
-                <Text
-                  style={[
-                    styles.fitmentSubtitle,
-                    { color: theme.textSecondary },
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={clearVehicleFilter}
+                  style={({ pressed }) => [
+                    styles.garageButton,
+                    {
+                      backgroundColor: theme.surface,
+                      borderColor: theme.border,
+                      borderWidth: 1,
+                    },
+                    pressed && styles.pressed,
                   ]}
                 >
-                  Select a vehicle from your garage to only see compatible
-                  parts.
-                </Text>
+                  <Text
+                    style={[styles.garageButtonText, { color: theme.text }]}
+                  >
+                    Show all parts
+                  </Text>
+                </Pressable>
               </View>
-
-              <Pressable
-                accessibilityRole="button"
-                onPress={() => router.push("/(customer)/(tabs)/garage")}
-                style={({ pressed }) => [
-                  styles.garageButton,
-                  { backgroundColor: theme.nav },
-                  pressed && styles.pressed,
+            ) : (
+              /* 2. STANDARD FITMENT PROMPT BANNER */
+              <View
+                style={[
+                  styles.fitmentBanner,
+                  {
+                    backgroundColor: theme.surface,
+                    borderColor: theme.border,
+                  },
                 ]}
               >
-                <Text style={[styles.garageButtonText, { color: theme.navText }]}>
-                  Go to My Garage
-                </Text>
-              </Pressable>
-            </View>
+                <View style={styles.fitmentCopy}>
+                  <View style={styles.fitmentHeader}>
+                    <View
+                      style={[
+                        styles.alertIconBg,
+                        { backgroundColor: theme.dangerSoft },
+                      ]}
+                    >
+                      <Ionicons
+                        name="alert-circle"
+                        size={18}
+                        color={theme.danger}
+                      />
+                    </View>
 
+                    <Text style={[styles.fitmentTitle, { color: theme.text }]}>
+                      Ensure part fitment
+                    </Text>
+                  </View>
+
+                  <Text
+                    style={[
+                      styles.fitmentSubtitle,
+                      { color: theme.textSecondary },
+                    ]}
+                  >
+                    Select a vehicle from your garage to only see compatible
+                    parts.
+                  </Text>
+                </View>
+
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={() => router.push("/(customer)/(tabs)/garage")}
+                  style={({ pressed }) => [
+                    styles.garageButton,
+                    { backgroundColor: theme.nav },
+                    pressed && styles.pressed,
+                  ]}
+                >
+                  <Text
+                    style={[styles.garageButtonText, { color: theme.navText }]}
+                  >
+                    Go to My Garage
+                  </Text>
+                </Pressable>
+              </View>
+            )}
+
+            {/* SEARCH BOX */}
             <View
               style={[
                 styles.searchBox,
@@ -175,6 +271,7 @@ export default function CustomerPartsScreen() {
               ) : null}
             </View>
 
+            {/* CATEGORIES */}
             <Text style={[styles.categoriesLabel, { color: theme.textMuted }]}>
               CATEGORIES
             </Text>
@@ -185,7 +282,8 @@ export default function CustomerPartsScreen() {
               contentContainerStyle={styles.categoriesScroll}
             >
               {categories.map((cat) => {
-                const active = selectedCategory.toLowerCase() === cat.toLowerCase();
+                const active =
+                  selectedCategory.toLowerCase() === cat.toLowerCase();
                 return (
                   <Pressable
                     key={cat}
@@ -194,9 +292,7 @@ export default function CustomerPartsScreen() {
                     style={({ pressed }) => [
                       styles.categoryChip,
                       {
-                        backgroundColor: active
-                          ? theme.action
-                          : theme.surface,
+                        backgroundColor: active ? theme.action : theme.surface,
                         borderColor: active ? theme.action : theme.border,
                       },
                       pressed && styles.pressed,
@@ -206,7 +302,9 @@ export default function CustomerPartsScreen() {
                       style={[
                         styles.categoryChipText,
                         {
-                          color: active ? theme.actionText : theme.textSecondary,
+                          color: active
+                            ? theme.actionText
+                            : theme.textSecondary,
                           fontWeight: active
                             ? fontWeight.bold
                             : fontWeight.medium,
@@ -223,16 +321,16 @@ export default function CustomerPartsScreen() {
             {query.isLoading ? (
               <View style={styles.loadingBox}>
                 <ActivityIndicator color={theme.primary} />
-                <Text style={[styles.loadingText, { color: theme.textSecondary }]}>
+                <Text
+                  style={[styles.loadingText, { color: theme.textSecondary }]}
+                >
                   Loading parts…
                 </Text>
               </View>
             ) : null}
           </View>
         }
-        renderItem={({ item }) => (
-          <PartCard part={item} onPress={() => {}} />
-        )}
+        renderItem={({ item }) => <PartCard part={item} onPress={() => {}} />}
         ListEmptyComponent={
           !query.isLoading ? (
             <View style={styles.emptyBox}>
@@ -254,22 +352,24 @@ export default function CustomerPartsScreen() {
               </Text>
 
               <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
-                We couldn't find any active parts matching your current
-                selection. If you have a vehicle selected, try clearing it or
-                selecting a different category.
+                {activeVehicleId
+                  ? `We couldn't find any compatible parts for this vehicle. Try clearing the filter to browse all available parts.`
+                  : `We couldn't find any active parts matching your current selection.`}
               </Text>
 
               <Pressable
                 accessibilityRole="button"
-                onPress={clearFilters}
+                onPress={activeVehicleId ? clearVehicleFilter : clearFilters}
                 style={({ pressed }) => [
                   styles.clearButton,
                   { backgroundColor: theme.nav },
                   pressed && styles.pressed,
                 ]}
               >
-                <Text style={[styles.clearButtonText, { color: theme.navText }]}>
-                  Clear filters
+                <Text
+                  style={[styles.clearButtonText, { color: theme.navText }]}
+                >
+                  {activeVehicleId ? "Show all parts" : "Clear filters"}
                 </Text>
               </Pressable>
             </View>
@@ -315,15 +415,12 @@ function PartCard({ part, onPress }: { part: PartItem; onPress: () => void }) {
             style={styles.partImage}
           />
         ) : (
-          <Ionicons name="cog-outline" size={48} color={theme.textMuted} />
+          <Ionicons name="cog-outline" size={44} color={theme.textMuted} />
         )}
 
         {part.inStock ? (
           <View
-            style={[
-              styles.stockBadge,
-              { backgroundColor: theme.successSoft },
-            ]}
+            style={[styles.stockBadge, { backgroundColor: theme.successSoft }]}
           >
             <Text style={[styles.stockText, { color: theme.success }]}>
               In Stock
@@ -380,9 +477,9 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   alertIconBg: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -395,7 +492,7 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   garageButton: {
-    minHeight: 40,
+    minHeight: 38,
     alignItems: "center",
     justifyContent: "center",
     borderRadius: radius.md,

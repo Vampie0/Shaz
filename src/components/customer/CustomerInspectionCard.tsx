@@ -1,3 +1,5 @@
+// File: src/components/customer/CustomerInspectionCard.tsx
+
 import { Ionicons } from "@expo/vector-icons";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
@@ -29,22 +31,25 @@ function inspectionTypeLabel(value: string) {
   }
 }
 
+// SENIOR'S EXACT STATUS LABELS & TONES (dashboard/verifications/page.tsx)
 function statusMeta(status: string) {
   switch (status) {
-    case "completed":
-      return { label: "Inspected by Fengxing", tone: "success" as const };
-    case "report_submitted":
-      return { label: "Report submitted", tone: "success" as const };
-    case "inspection_in_progress":
-      return { label: "Inspection in progress", tone: "info" as const };
-    case "inspection_scheduled":
-      return { label: "Inspection scheduled", tone: "info" as const };
-    case "assigned":
-      return { label: "Inspector assigned", tone: "warning" as const };
+    case "pending":
+      return { label: "Inspection pending", tone: "warning" as const };
     case "confirmed":
       return { label: "Confirmed", tone: "success" as const };
+    case "assigned":
+      return { label: "Inspector assigned", tone: "info" as const };
+    case "inspection_scheduled":
+      return { label: "Scheduled", tone: "info" as const };
+    case "inspection_in_progress":
+      return { label: "Inspection in progress", tone: "info" as const };
+    case "report_submitted":
+      return { label: "Report ready", tone: "info" as const };
+    case "completed":
+      return { label: "Inspected by Shaz", tone: "success" as const };
     case "cancelled":
-      return { label: "Cancelled", tone: "danger" as const };
+      return { label: "Cancelled", tone: "neutral" as const };
     default:
       return { label: titleCase(status), tone: "neutral" as const };
   }
@@ -56,7 +61,7 @@ function formatDate(preferredDate: string | null, scheduledFor: string | null) {
   const date = new Date(scheduledFor ? source : source + "T00:00:00");
   if (Number.isNaN(date.getTime())) return source;
   return new Intl.DateTimeFormat("en-GB", {
-    day: "2-digit",
+    day: "numeric",
     month: "short",
     year: "numeric",
   }).format(date);
@@ -103,7 +108,11 @@ export default function CustomerInspectionCard({
           <View style={styles.metaRow}>
             {inspection.registration ? (
               <View style={styles.metaItem}>
-                <Ionicons name="car-outline" size={15} color={theme.textMuted} />
+                <Ionicons
+                  name="car-outline"
+                  size={14}
+                  color={theme.textMuted}
+                />
                 <Text style={[styles.meta, { color: theme.textSecondary }]}>
                   {inspection.registration}
                 </Text>
@@ -112,7 +121,11 @@ export default function CustomerInspectionCard({
 
             {date ? (
               <View style={styles.metaItem}>
-                <Ionicons name="calendar-outline" size={15} color={theme.textMuted} />
+                <Ionicons
+                  name="calendar-outline"
+                  size={14}
+                  color={theme.textMuted}
+                />
                 <Text style={[styles.meta, { color: theme.textSecondary }]}>
                   {date}
                 </Text>
@@ -133,14 +146,22 @@ const styles = StyleSheet.create({
     borderRadius: radius.xl,
     padding: spacing.lg,
     gap: spacing.md,
-    elevation: 3,
+    elevation: 2,
     shadowColor: "#000000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
   },
-  header: { gap: spacing.md },
-  copy: { gap: spacing.xs },
+  header: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    gap: spacing.md,
+  },
+  copy: {
+    flex: 1,
+    gap: 4,
+  },
   eyebrow: {
     fontSize: 10,
     fontWeight: fontWeight.bold,
@@ -153,7 +174,9 @@ const styles = StyleSheet.create({
   metaRow: {
     flexDirection: "row",
     flexWrap: "wrap",
+    alignItems: "center",
     gap: spacing.md,
+    marginTop: 2,
   },
   metaItem: {
     flexDirection: "row",

@@ -2,10 +2,9 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Redirect } from "expo-router";
 import { useEffect, useState } from "react";
 
-import FullScreenLoader from "@/components/ui/FullScreenLoader";
 import { useAuth } from "@/features/auth/use-auth";
 
-const ONBOARDING_KEY = "@fengxing/has-seen-onboarding";
+const ONBOARDING_KEY = "@shaz/has-seen-onboarding";
 
 export default function IndexScreen() {
   const { isInitializing, isAuthenticated, profile } = useAuth();
@@ -28,8 +27,9 @@ export default function IndexScreen() {
     void checkOnboarding();
   }, []);
 
+  // Wheel removed: return null so Splash Screen stays visible
   if (isInitializing || checkingOnboarding) {
-    return <FullScreenLoader />;
+    return null;
   }
 
   if (!hasSeenOnboarding && !isAuthenticated) {

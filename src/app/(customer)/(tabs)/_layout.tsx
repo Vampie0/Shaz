@@ -1,20 +1,15 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Redirect, Tabs } from "expo-router";
 import type { ComponentProps } from "react";
-import {
-  StyleSheet,
-} from "react-native";
-import type {
-  ColorValue,
-} from "react-native";
+import type { ColorValue } from "react-native";
+import { StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import FullScreenLoader from "@/components/ui/FullScreenLoader";
 import { useAuth } from "@/features/auth/use-auth";
 import { useAppTheme } from "@/hooks/use-app-theme";
 
-type IconName =
-  ComponentProps<typeof Ionicons>["name"];
+type IconName = ComponentProps<typeof Ionicons>["name"];
 
 type CustomerRoute =
   | "overview"
@@ -67,11 +62,7 @@ function TabIcon({
 }) {
   return (
     <Ionicons
-      name={
-        focused
-          ? icons[route].active
-          : icons[route].inactive
-      }
+      name={focused ? icons[route].active : icons[route].inactive}
       size={21}
       color={color}
     />
@@ -80,74 +71,46 @@ function TabIcon({
 
 export default function CustomerTabsLayout() {
   const theme = useAppTheme();
-  const insets =
-    useSafeAreaInsets();
+  const insets = useSafeAreaInsets();
 
-  const {
-    isInitializing,
-    isAuthenticated,
-    profile,
-  } = useAuth();
+  const { isInitializing, isAuthenticated, profile } = useAuth();
 
   if (isInitializing) {
     return <FullScreenLoader />;
   }
 
-  if (
-    !isAuthenticated ||
-    !profile
-  ) {
-    return (
-      <Redirect href="/login" />
-    );
+  if (!isAuthenticated || !profile) {
+    return <Redirect href="/login" />;
   }
 
-  if (
-    profile.role !==
-    "customer"
-  ) {
+  if (profile.role !== "customer") {
     return <Redirect href="/" />;
   }
 
   return (
     <Tabs
+      detachInactiveScreens
       screenOptions={{
         freezeOnBlur: true,
-        detachInactiveScreens: true,
         headerShown: false,
         tabBarHideOnKeyboard: true,
 
-        tabBarActiveTintColor:
-          theme.primary,
+        tabBarActiveTintColor: theme.primary,
 
-        tabBarInactiveTintColor:
-          theme.textMuted,
+        tabBarInactiveTintColor: theme.textMuted,
 
         sceneStyle: {
-          backgroundColor:
-            theme.background,
+          backgroundColor: "transparent",
         },
 
         tabBarStyle: {
           position: "relative",
-          height:
-            58 +
-            Math.max(
-              insets.bottom,
-              6,
-            ),
+          height: 58 + Math.max(insets.bottom, 6),
           paddingTop: 6,
-          paddingBottom:
-            Math.max(
-              insets.bottom,
-              6,
-            ),
-          backgroundColor:
-            theme.surface,
-          borderTopColor:
-            theme.border,
-          borderTopWidth:
-            StyleSheet.hairlineWidth,
+          paddingBottom: Math.max(insets.bottom, 6),
+          backgroundColor: theme.surface,
+          borderTopColor: theme.border,
+          borderTopWidth: StyleSheet.hairlineWidth,
           elevation: 0,
           shadowOpacity: 0,
         },
@@ -168,66 +131,17 @@ export default function CustomerTabsLayout() {
         name="overview"
         options={{
           title: "Overview",
-          tabBarIcon: ({
-            focused,
-            color,
-          }) => (
-            <TabIcon
-              route="overview"
-              focused={focused}
-              color={color}
-            />
+          tabBarIcon: ({ focused, color }) => (
+            <TabIcon route="overview" focused={focused} color={color} />
           ),
         }}
       />
-
-      <Tabs.Screen
-        name="my-cars"
-        options={{
-          title: "My Cars",
-          tabBarIcon: ({
-            focused,
-            color,
-          }) => (
-            <TabIcon
-              route="my-cars"
-              focused={focused}
-              color={color}
-            />
-          ),
-        }}
-      />
-
-      <Tabs.Screen
-        name="garage"
-        options={{
-          title: "Garage",
-          tabBarIcon: ({
-            focused,
-            color,
-          }) => (
-            <TabIcon
-              route="garage"
-              focused={focused}
-              color={color}
-            />
-          ),
-        }}
-      />
-
       <Tabs.Screen
         name="bookings"
         options={{
           title: "Bookings",
-          tabBarIcon: ({
-            focused,
-            color,
-          }) => (
-            <TabIcon
-              route="bookings"
-              focused={focused}
-              color={color}
-            />
+          tabBarIcon: ({ focused, color }) => (
+            <TabIcon route="bookings" focused={focused} color={color} />
           ),
         }}
       />
@@ -236,19 +150,31 @@ export default function CustomerTabsLayout() {
         name="inspections"
         options={{
           title: "Inspections",
-          tabBarIcon: ({
-            focused,
-            color,
-          }) => (
-            <TabIcon
-              route="inspections"
-              focused={focused}
-              color={color}
-            />
+          tabBarIcon: ({ focused, color }) => (
+            <TabIcon route="inspections" focused={focused} color={color} />
+          ),
+        }}
+      />
+
+      <Tabs.Screen
+        name="my-cars"
+        options={{
+          title: "My Cars",
+          tabBarIcon: ({ focused, color }) => (
+            <TabIcon route="my-cars" focused={focused} color={color} />
+          ),
+        }}
+      />
+
+      <Tabs.Screen
+        name="garage"
+        options={{
+          title: "Garage",
+          tabBarIcon: ({ focused, color }) => (
+            <TabIcon route="garage" focused={focused} color={color} />
           ),
         }}
       />
     </Tabs>
   );
 }
-

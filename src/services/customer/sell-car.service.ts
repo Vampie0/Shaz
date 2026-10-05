@@ -1,5 +1,7 @@
-import { supabase } from "@/services/supabase/client";
+// File: src/services/customer/sell-car.service.ts
+
 import type { SellCarDraftForm } from "@/features/customer/sell-car/types";
+import { supabase } from "@/services/supabase/client";
 
 type CreatedCarRow = {
   id: string;
@@ -61,6 +63,7 @@ function requiredNumber(value: string, label: string) {
   return number;
 }
 
+// 1. CREATE DRAFT (SENIOR'S createListingAction)
 export async function createSellCarDraft(
   customerId: string,
   form: SellCarDraftForm,
@@ -79,9 +82,9 @@ export async function createSellCarDraft(
   const motExpiry = parseDateInput(form.motExpiry);
 
   const ulezCompliant =
-    form.ulez === "not_stated"
-      ? null
-      : form.ulez === "compliant";
+    form.ulez === "not_stated" || !form.ulez ? null : form.ulez === "compliant";
+
+  const serviceHistory = optionalText(form.serviceHistory);
 
   const { data, error } = await supabase
     .from("cars")
@@ -107,7 +110,7 @@ export async function createSellCarDraft(
       is_verified: false,
       published_at: null,
       mot_expiry: motExpiry,
-      service_history: optionalText(form.serviceHistory),
+      service_history: serviceHistory === "Not stated" ? null : serviceHistory,
       ulez_compliant: ulezCompliant,
     })
     .select("id")
@@ -123,6 +126,7 @@ export async function createSellCarDraft(
   return created.id;
 }
 
+// 2. UPDATE DRAFT / REJECTED CAR (SENIOR'S updateListingAction)
 export async function updateCarDraft(
   carId: string,
   customerId: string,
@@ -142,9 +146,9 @@ export async function updateCarDraft(
   const motExpiry = parseDateInput(form.motExpiry);
 
   const ulezCompliant =
-    form.ulez === "not_stated"
-      ? null
-      : form.ulez === "compliant";
+    form.ulez === "not_stated" || !form.ulez ? null : form.ulez === "compliant";
+
+  const serviceHistory = optionalText(form.serviceHistory);
 
   const { error } = await supabase
     .from("cars")
@@ -165,7 +169,7 @@ export async function updateCarDraft(
       postcode: form.postcode.trim().toUpperCase(),
       description: form.description.trim(),
       mot_expiry: motExpiry,
-      service_history: optionalText(form.serviceHistory),
+      service_history: serviceHistory === "Not stated" ? null : serviceHistory,
       ulez_compliant: ulezCompliant,
       updated_at: new Date().toISOString(),
     })
@@ -175,6 +179,39 @@ export async function updateCarDraft(
   if (error) throw error;
 }
 
+// 3. UPDATE ACTIVE CAR (SENIOR'S updateActiveListingAction USING EXACT RPC)
+export async function updateActiveCarListing(
+  carId: string,
+  form: SellCarDraftForm,
+) {
+  const price = requiredNumber(form.price, "Price");
+  const mileage = requiredNumber(form.mileage, "Mileage");
+  const motExpiry = parseDateInput(form.motExpiry);
+
+  const ulezCompliant =
+    form.ulez === "not_stated" || !form.ulez ? null : form.ulez === "compliant";
+
+  const serviceHistory = optionalText(form.serviceHistory);
+
+  const { error } = await supabase.rpc("update_active_car_listing", {
+    p_car_id: carId,
+    p_price: price,
+    p_mileage: mileage,
+    p_city: form.city.trim(),
+    p_postcode: form.postcode.trim().toUpperCase(),
+    p_description: form.description.trim(),
+    p_mot_expiry: motExpiry,
+    p_service_history: serviceHistory === "Not stated" ? null : serviceHistory,
+    p_ulez_compliant: ulezCompliant,
+  });
+
+  if (error) {
+    console.error("update_active_car_listing error:", error);
+    throw new Error(error.message || "Could not update this active listing.");
+  }
+}
+
+// 4. FETCH CAR DRAFT DETAILS (MAPPING EXACT SENIOR VALUES)
 export async function fetchCarDraftDetail(carId: string, customerId: string) {
   const { data, error } = await supabase
     .from("cars")
@@ -185,6 +222,17 @@ export async function fetchCarDraftDetail(carId: string, customerId: string) {
 
   if (error) throw error;
   if (!data) throw new Error("Car draft not found.");
+
+  // Map service history to senior's exact values ('full', 'part', 'none', '')
+  let mappedServiceHistory = "";
+  if (data.service_history) {
+    const sh = data.service_history.toLowerCase();
+    if (sh.includes("full")) mappedServiceHistory = "full";
+    else if (sh.includes("part")) mappedServiceHistory = "part";
+    else if (sh.includes("none") || sh.includes("no"))
+      mappedServiceHistory = "none";
+    else mappedServiceHistory = data.service_history;
+  }
 
   const form: SellCarDraftForm = {
     make: data.make || "",
@@ -202,8 +250,13 @@ export async function fetchCarDraftDetail(carId: string, customerId: string) {
     city: data.city || "",
     postcode: data.postcode || "",
     motExpiry: formatDateOutput(data.mot_expiry),
-    serviceHistory: data.service_history || "Not stated",
-    ulez: data.ulez_compliant === null ? "not_stated" : data.ulez_compliant ? "compliant" : "not_compliant",
+    serviceHistory: mappedServiceHistory,
+    ulez:
+      data.ulez_compliant === null
+        ? "not_stated"
+        : data.ulez_compliant
+          ? "compliant"
+          : "not_compliant",
     description: data.description || "",
   };
 
@@ -213,25 +266,16 @@ export async function fetchCarDraftDetail(carId: string, customerId: string) {
   };
 }
 
-export async function submitCarForReview(carId: string, customerId: string) {
-  // Call Supabase RPC submit_car_for_review
+// 5. SUBMIT FOR REVIEW (SENIOR'S submitListingAction)
+export async function submitCarForReview(carId: string, _customerId: string) {
   const { error } = await supabase.rpc("submit_car_for_review", {
     p_car_id: carId,
   });
 
-  if (error) {
-    const { error: err2 } = await supabase.rpc("submit_car_for_review", {
-      p_id: carId,
-    });
-    if (err2) {
-      const { error: err3 } = await supabase.rpc("submit_car_for_review", {
-        car_id: carId,
-      });
-      if (err3) throw error;
-    }
-  }
+  if (error) throw error;
 }
 
+// 6. PHOTO UPLOADS & MANAGING
 export async function uploadCarListingPhoto({
   userId,
   carId,
@@ -251,7 +295,6 @@ export async function uploadCarListingPhoto({
 }) {
   const ext = fileName?.split(".").pop()?.toLowerCase() || "jpg";
   const safeName = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
-  
   const storagePath = `${userId}/${carId}/${safeName}`;
 
   const response = await fetch(uri);
@@ -270,14 +313,12 @@ export async function uploadCarListingPhoto({
 
   if (uploadErr) throw uploadErr;
 
-  const { error: dbErr } = await supabase
-    .from("car_images")
-    .insert({
-      car_id: carId,
-      storage_path: storagePath,
-      sort_order: sortOrder,
-      is_primary: isPrimary,
-    });
+  const { error: dbErr } = await supabase.from("car_images").insert({
+    car_id: carId,
+    storage_path: storagePath,
+    sort_order: sortOrder,
+    is_primary: isPrimary,
+  });
 
   if (dbErr) {
     await supabase.storage.from("car-images").remove([storagePath]);
@@ -287,7 +328,9 @@ export async function uploadCarListingPhoto({
   return storagePath;
 }
 
-export async function fetchCarListingPhotos(carId: string): Promise<CarListingPhoto[]> {
+export async function fetchCarListingPhotos(
+  carId: string,
+): Promise<CarListingPhoto[]> {
   const { data, error } = await supabase
     .from("car_images")
     .select("id, car_id, storage_path, sort_order, is_primary")
@@ -311,7 +354,7 @@ export async function fetchCarListingPhotos(carId: string): Promise<CarListingPh
         isPrimary: row.is_primary,
         signedUrl: signed?.signedUrl || null,
       };
-    })
+    }),
   );
 }
 
@@ -326,27 +369,8 @@ export async function deleteCarListingPhoto(id: string, storagePath: string) {
   await supabase.storage.from("car-images").remove([storagePath]);
 }
 
-export async function markCarAsSold(carId: string, sellerId: string) {
-  // Update status = 'sold' via RPC mark_car_sold (ALL IMAGES & DB DATA ARE PRESERVED)
-  const { error: err1 } = await supabase.rpc("mark_car_sold", { p_car_id: carId });
-
-  if (err1) {
-    const { error: err2 } = await supabase.rpc("mark_car_sold", { p_id: carId });
-    if (err2) {
-      const { error: err3 } = await supabase.rpc("mark_car_sold", { car_id: carId });
-      if (err3) {
-        // Fallback update status = 'sold'
-        const { error: updateErr } = await supabase
-          .from("cars")
-          .update({
-            status: "sold",
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", carId)
-          .eq("seller_id", sellerId);
-
-        if (updateErr) throw err1;
-      }
-    }
-  }
+// 7. MARK AS SOLD (SENIOR'S markSoldAction)
+export async function markCarAsSold(carId: string, _sellerId: string) {
+  const { error } = await supabase.rpc("mark_car_sold", { p_car_id: carId });
+  if (error) throw error;
 }

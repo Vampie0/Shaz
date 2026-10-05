@@ -1,67 +1,67 @@
 export const colors = {
   light: {
-    background: "#F8FAFC",
+    background: "#FFFFFF",
     surface: "#FFFFFF",
-    surfaceSecondary: "#F1F5F9",
-    surfaceMuted: "#E2E8F0",
+    surfaceSecondary: "#F7F4EF",
+    surfaceMuted: "#F9FAFB",
 
-    text: "#0F172A",
-    textSecondary: "#475569",
-    textMuted: "#64748B",
+    text: "#13252A",
+    textSecondary: "#344054",
+    textMuted: "#667085",
 
-    primary: "#D92D20",
-    primaryPressed: "#B42318",
+    primary: "#E94A3F",
+    primaryPressed: "#C73830",
     primaryText: "#FFFFFF",
-    primarySoft: "#FEF2F2",
+    primarySoft: "#FEE4E2",
 
-    action: "#D92D20",
-    actionPressed: "#B42318",
+    action: "#E94A3F",
+    actionPressed: "#C73830",
     actionText: "#FFFFFF",
 
-    nav: "#0F172A",
+    nav: "#082A30",
     navText: "#FFFFFF",
     navMuted: "#94A3B8",
 
-    border: "#E2E8F0",
-    inputBorder: "#CBD5E1",
+    border: "#E4E7EC",
+    inputBorder: "#D0D5DD",
 
-    success: "#059669",
-    successSoft: "#ECFDF5",
+    success: "#15803D",
+    successSoft: "#DCFCE7",
     warning: "#D97706",
     warningSoft: "#FFFBEB",
     info: "#2563EB",
     infoSoft: "#EFF6FF",
-    danger: "#D92D20",
-    dangerSoft: "#FEF2F2",
+    danger: "#C73830",
+    dangerSoft: "#FEF3F2",
 
-    overlay: "rgba(15, 23, 42, 0.60)",
+    overlay: "rgba(8, 42, 48, 0.60)",
   },
 
   dark: {
-    background: "#09131F",
-    surface: "#0F2032",
-    surfaceSecondary: "#162B42",
-    surfaceMuted: "#1E3652",
+    background: "#082A30",
+    surface: "#0C353C",
+    surfaceSecondary: "#114048",
+    surfaceMuted: "#164A54",
 
     text: "#F8FAFC",
-    textSecondary: "#94A3B8",
-    textMuted: "#64748B",
+    textSecondary: "#B7C9CD",
+    textMuted: "#8AA3A8",
 
-    primary: "#F04438",
-    primaryPressed: "#D92D20",
+    primary: "#E94A3F",
+    primaryPressed: "#C73830",
     primaryText: "#FFFFFF",
     primarySoft: "#3A1B1B",
 
-    action: "#D92D20",
-    actionPressed: "#B42318",
+    action: "#E94A3F",
+    actionPressed: "#C73830",
     actionText: "#FFFFFF",
 
-    nav: "#06101B",
+    nav: "#082A30",
     navText: "#FFFFFF",
-    navMuted: "#94A3B8",
+    navMuted: "#8AA3A8",
 
-    border: "#1E3652",
-    inputBorder: "#2A4768",
+    border: "#1E5A66",
+    inputBorder: "#2A6B78",
 
     success: "#10B981",
     successSoft: "#064E3B",
@@ -72,7 +72,7 @@ export const colors = {
     danger: "#F87171",
     dangerSoft: "#451A1A",
 
-    overlay: "rgba(0, 0, 0, 0.75)",
+    overlay: "rgba(8, 42, 48, 0.75)",
   },
 } as const;
 

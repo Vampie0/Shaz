@@ -1,15 +1,19 @@
-import { Redirect, usePathname } from "expo-router";
-import { Drawer } from "expo-router/drawer";
+import { Redirect, Stack } from "expo-router";
 
-import CustomerDrawerContent from "@/components/customer/CustomerDrawerContent";
+import CustomerSidebar from "@/components/customer/CustomerSidebar";
 import FullScreenLoader from "@/components/ui/FullScreenLoader";
 import { useAuth } from "@/features/auth/use-auth";
-import { rememberCustomerDrawerOrigin } from "@/features/customer/customer-drawer-origin";
-import { useAppTheme } from "@/hooks/use-app-theme";
 
-export default function CustomerDrawerLayout() {
-  const theme = useAppTheme();
-  const pathname = usePathname();
+const drawerScreen = {
+  animation: "slide_from_left" as const,
+  animationDuration: 320,
+  gestureEnabled: true,
+  contentStyle: {
+    backgroundColor: "transparent",
+  },
+};
+
+export default function CustomerLayout() {
   const { isInitializing, isAuthenticated, profile } = useAuth();
 
   if (isInitializing) {
@@ -25,80 +29,67 @@ export default function CustomerDrawerLayout() {
   }
 
   return (
-    <Drawer
-      drawerContent={(props) => <CustomerDrawerContent {...props} />}
-      screenListeners={{
-        drawerItemPress: () => {
-          rememberCustomerDrawerOrigin(pathname);
-        },
-      }}
-      screenOptions={{
-        headerShown: false,
-        drawerStyle: {
-          backgroundColor: theme.surface,
-          width: 300,
-        },
-        sceneStyle: {
-          backgroundColor: theme.background,
-        },
-      }}
-    >
-      <Drawer.Screen
-        name="(tabs)"
-        options={{
-          title: "Dashboard",
-          drawerItemStyle: { display: "none" },
+    <>
+      <Stack
+        screenOptions={{
+          headerShown: false,
+          animation: "slide_from_right",
+          animationDuration: 280,
+          gestureEnabled: true,
+          contentStyle: {
+            backgroundColor: "transparent",
+          },
         }}
-      />
-
-      <Drawer.Screen name="buy-cars" options={{ title: "Buy Cars" }} />
-      <Drawer.Screen name="parts" options={{ title: "Parts" }} />
-      <Drawer.Screen name="sell-my-car" options={{ title: "Sell My Car" }} />
-      <Drawer.Screen name="vehicle-inspection" options={{ title: "Vehicle Inspection" }} />
-      <Drawer.Screen name="mobile-services" options={{ title: "Mobile Services" }} />
-      <Drawer.Screen name="about" options={{ title: "About" }} />
-      <Drawer.Screen name="account" options={{ title: "Account", drawerItemStyle: { display: "none" } }} />
-      <Drawer.Screen name="account-edit" options={{ title: "Edit Profile", drawerItemStyle: { display: "none" } }} />
-
-      <Drawer.Screen
-        name="book-service/[serviceId]"
-        options={{
-          title: "Book Service",
-          drawerItemStyle: { display: "none" },
-        }}
-      />
-
-      <Drawer.Screen
-        name="booking/[bookingId]"
-        options={{
-          title: "Booking Details",
-          drawerItemStyle: { display: "none" },
-        }}
-      />
-
-      <Drawer.Screen
-        name="inspection/[inspectionId]"
-        options={{
-          title: "Inspection",
-          drawerItemStyle: { display: "none" },
-        }}
-      />
-
-      <Drawer.Screen
-        name="inspection-report/[inspectionId]"
-        options={{
-          title: "Inspection Report",
-          drawerItemStyle: { display: "none" },
-        }}
-      />
-
-      <Drawer.Screen
-        name="car/[carId]"
-        options={{
-          title: "Car Details",
-          drawerItemStyle: { display: "none" },
-        }}
-      />
-    </Drawer>
+      >
+        <Stack.Screen
+          name="(tabs)"
+          options={{
+            animation: "none",
+          }}
+        />
+        <Stack.Screen name="vehicle-inspection" options={drawerScreen} />
+        <Stack.Screen name="mobile-services" options={drawerScreen} />
+        <Stack.Screen name="buy-cars" options={drawerScreen} />
+        <Stack.Screen name="parts" options={drawerScreen} />
+        <Stack.Screen name="sell-my-car" options={drawerScreen} />
+        <Stack.Screen name="about" options={drawerScreen} />
+        <Stack.Screen name="account" options={drawerScreen} />
+      </Stack>
+      <CustomerSidebar />
+    </>
   );
 }
+
+// import { Redirect, Stack } from "expo-router";
+
+// import FullScreenLoader from "@/components/ui/FullScreenLoader";
+// import { useAuth } from "@/features/auth/use-auth";
+// import { useAppTheme } from "@/hooks/use-app-theme";
+
+// export default function CustomerLayout() {
+//   const theme = useAppTheme();
+//   const { isInitializing, isAuthenticated, profile } = useAuth();
+
+//   if (isInitializing) {
+//     return <FullScreenLoader />;
+//   }
+
+//   if (!isAuthenticated || !profile) {
+//     return <Redirect href="/login" />;
+//   }
+
+//   if (profile.role !== "customer") {
+//     return <Redirect href="/" />;
+//   }
+
+//   return (
+//     <Stack
+//       screenOptions={{
+//         headerShown: false,
+//         contentStyle: {
+//           backgroundColor: theme.background,
+//         },
+//       }}
+//     />
+//   );
+// }
